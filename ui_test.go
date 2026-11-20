@@ -207,6 +207,9 @@ func TestUIForgetSurfacesTheCLIRefusal(t *testing.T) {
 // The UI has no TLS and no login beyond its launch link, so it listens on loopback only. A
 // wildcard, empty or LAN host would serve the whole brain to the network.
 func TestUIRefusesANonLoopbackHost(t *testing.T) {
+	// A brain of its own: run from a checkout with no brain.json, the command would stop at
+	// "no brain here" before reaching what this test checks.
+	mcpEnv(t)
 	for _, h := range []string{"0.0.0.0", "", "192.168.1.10", "::"} {
 		err := run([]string{"ui", "--host", h, "--no-open"}, &bytes.Buffer{})
 		if err == nil || !strings.Contains(err.Error(), "loopback only") {

@@ -103,6 +103,9 @@ func TestDocsDoNotTeachTheRetiredClient(t *testing.T) {
 // the single-dash help, concluded the double-dash form had been dropped, rewrote its
 // project's CLAUDE.md and stored a memory saying so. The tool taught it that.
 func TestHelpRendersFlagsTheWayTheDocsWriteThem(t *testing.T) {
+	// A brain of its own: run from a checkout with no brain.json, the command would stop at
+	// "no brain here" before reaching what this test checks.
+	mcpEnv(t)
 	for _, cmd := range []string{"recall", "remember", "update", "measure"} {
 		var buf bytes.Buffer
 		fs := flag.NewFlagSet(cmd, flag.ContinueOnError)
