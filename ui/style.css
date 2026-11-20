@@ -1,0 +1,198 @@
+:root {
+  --bg: #0c0f14;
+  --panel: #131822;
+  --panel2: #182031;
+  --line: #232c3d;
+  --text: #dfe6f2;
+  --dim: #8794ab;
+  --honey: #f0b429;
+  --honey-dim: #6b5116;
+  --cyan: #3ec9d6;
+  --green: #4ad991;
+  --red: #ef6b73;
+  --violet: #9d8cf5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 20% -10%, #16203a 0%, var(--bg) 60%);
+  color: var(--text);
+  font: 14px/1.5 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+}
+
+header {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 20px;
+  padding: 12px 20px;
+  background: rgba(12, 15, 20, .85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { font-weight: 600; letter-spacing: .2px; white-space: nowrap; }
+.brand b { color: var(--honey); font-weight: 700; }
+.dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--honey); box-shadow: 0 0 10px var(--honey); margin-right: 6px;
+}
+
+nav { display: flex; gap: 4px; }
+nav button {
+  background: none; border: 1px solid transparent; color: var(--dim);
+  padding: 6px 14px; border-radius: 8px; cursor: pointer; font: inherit;
+}
+nav button:hover { color: var(--text); background: var(--panel); }
+nav button.on { color: #0c0f14; background: var(--honey); font-weight: 600; }
+
+.meta { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--dim); font-size: 12px; }
+#refresh {
+  background: var(--panel); border: 1px solid var(--line); color: var(--dim);
+  border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 15px;
+}
+#refresh:hover { color: var(--honey); border-color: var(--honey-dim); }
+
+main { padding: 22px; max-width: 1180px; margin: 0 auto; }
+.hidden { display: none; }
+
+/* controls */
+.controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+input[type=search], select {
+  background: var(--panel); border: 1px solid var(--line); color: var(--text);
+  padding: 9px 12px; border-radius: 9px; font: inherit; outline: none;
+}
+input[type=search] { flex: 1; min-width: 240px; }
+input[type=search]:focus, select:focus { border-color: var(--honey-dim); }
+
+/* stat row */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 22px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.stat .n { font-size: 24px; font-weight: 700; color: var(--honey); }
+.stat .l { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
+
+h2 {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--dim); margin: 26px 0 10px; font-weight: 600;
+}
+h2:first-child { margin-top: 0; }
+
+/* cards */
+.list { display: flex; flex-direction: column; gap: 10px; }
+.card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px;
+}
+.card.pin { border-left: 3px solid var(--honey); }
+.card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+.card .body { color: #c3cddd; white-space: pre-wrap; word-break: break-word; }
+.card .body.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card .more { color: var(--cyan); cursor: pointer; font-size: 12px; margin-top: 6px; display: inline-block; }
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+
+/* tags */
+.tag {
+  font-size: 11px; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--dim); background: var(--panel2);
+  white-space: nowrap;
+}
+.tag.honey { color: var(--honey); border-color: var(--honey-dim); }
+.tag.cyan { color: var(--cyan); border-color: #1c4a52; }
+.tag.green { color: var(--green); border-color: #1d4c37; }
+.tag.red { color: var(--red); border-color: #532228; }
+.tag.violet { color: var(--violet); border-color: #3b3468; }
+.tag.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.id { color: var(--dim); font-family: ui-monospace, Menlo, monospace; font-size: 12px; }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.chip {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
+  padding: 6px 11px; font-size: 12px; color: var(--dim); cursor: pointer;
+}
+.chip:hover { border-color: var(--honey-dim); color: var(--text); }
+.chip b { color: var(--text); }
+.chip.on { border-color: var(--honey); color: var(--honey); }
+
+/* leads table-ish */
+.lead { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; }
+.lead .who { font-weight: 600; }
+.lead .co { color: var(--dim); }
+.lead .na { color: var(--cyan); font-size: 13px; }
+.lead .notes { color: #a9b4c7; font-size: 13px; white-space: pre-wrap; margin-top: 6px;
+  border-top: 1px dashed var(--line); padding-top: 8px; }
+
+/* timeline */
+.timeline { display: flex; flex-direction: column; gap: 0; border-left: 1px solid var(--line); margin-left: 8px; }
+.ev { position: relative; padding: 10px 0 10px 22px; }
+.ev::before {
+  content: ''; position: absolute; left: -5px; top: 17px;
+  width: 9px; height: 9px; border-radius: 50%; background: var(--panel2); border: 2px solid var(--line);
+}
+.ev.first::before { background: var(--honey); border-color: var(--honey); }
+.ev .ts { color: var(--dim); font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+.ev a { color: var(--cyan); word-break: break-all; font-size: 12px; }
+
+.empty { color: var(--dim); padding: 30px; text-align: center; }
+a { color: var(--cyan); }
+
+.card.guard { border-left: 3px solid var(--red, #e5534b); }
+#tabs button.hidden { display: none; }
+
+/* measures */
+.muted { color: var(--dim); font-size: 12px; }
+.spark {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 20px; line-height: 1.1; letter-spacing: 1px;
+  color: var(--cyan); margin: 4px 0;
+}
+#view-measures .card { cursor: default; }
+#view-measures #ms-list .card[onclick], #view-brief .card .spark { cursor: pointer; }
+#ms-points .card h3 { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* forget — a delete is not a link, so it does not look like one */
+.forget { margin-top: 10px; }
+button.ghost, button.danger {
+  background: var(--panel2); border: 1px solid var(--line); color: var(--dim);
+  padding: 6px 12px; border-radius: 8px; font: inherit; font-size: 12px; cursor: pointer;
+}
+button.ghost:hover { color: var(--text); border-color: var(--honey-dim); }
+button.danger { color: var(--red); border-color: #532228; }
+button.danger:hover { background: #2a161a; }
+button.danger[disabled] { opacity: .5; cursor: default; }
+.forget-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.forget-form input {
+  flex: 1; min-width: 260px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--text);
+  padding: 8px 11px; border-radius: 8px; font: inherit; outline: none;
+}
+.forget-form input:focus { border-color: var(--red); }
+.forget-msg {
+  flex-basis: 100%; color: var(--red); font-size: 12px; white-space: pre-wrap;
+  border-left: 2px solid #532228; padding-left: 10px; margin-top: 4px;
+}
+.forget-msg div { margin: 2px 0; }
+
+/* tree — scopes nest on ':', and so does this */
+.tree { display: flex; flex-direction: column; gap: 2px; }
+.tree-node { border-left: 1px solid var(--line); }
+#tree-root > .tree-node { border-left: none; }
+.tree-head {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 7px 10px; cursor: pointer; border-radius: 8px;
+}
+.tree-head:hover { background: var(--panel); }
+.caret { color: var(--dim); width: 10px; font-size: 11px; }
+.tree-kids { padding-left: 16px; }
+.tree-group { padding: 4px 0 4px 6px; }
+.tree-grouphead {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--dim); padding: 4px 6px;
+}
+.tree-mem { border-radius: 8px; padding: 5px 10px; }
+.tree-mem:hover { background: var(--panel); }
+.tree-mem.pin { border-left: 2px solid var(--honey); }
+.tree-mem .row { cursor: pointer; }
+.tree-title { font-size: 13px; }
+.tree-detail { padding: 8px 4px 12px; }

@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brain</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧠</text></svg>">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span> <span id="brand-name"></span> <b>Brain</b></div>
+  <nav id="tabs">
+    <button data-tab="brief" class="on">Brief</button>
+    <button data-tab="map">Map</button>
+    <button data-tab="tree">Tree</button>
+    <button data-tab="memories">Memories</button>
+    <button data-tab="measures">Measures</button>
+    <button data-tab="leads">Leads</button>
+    <button data-tab="events">Activity</button>
+  </nav>
+  <div class="meta"><span id="dbline"></span><button id="refresh" title="Reload from disk">⟳</button></div>
+</header>
+
+<main>
+  <section id="view-brief" class="view"></section>
+
+  <section id="view-map" class="view hidden"></section>
+
+  <section id="view-tree" class="view hidden">
+    <div class="controls">
+      <input id="tree-q" type="search" placeholder="Filter titles">
+      <select id="tree-group">
+        <option value="scope">nest by scope</option>
+        <option value="scope-type">nest by scope, then type</option>
+      </select>
+      <button id="tree-expand" class="ghost">expand all</button>
+      <button id="tree-collapse" class="ghost">collapse all</button>
+    </div>
+    <div id="tree-root" class="tree"></div>
+  </section>
+
+  <section id="view-memories" class="view hidden">
+    <div class="controls">
+      <input id="mem-q" type="search" placeholder="Search memories (FTS, ranked by recall score)">
+      <select id="mem-scope"><option value="">all scopes</option></select>
+      <select id="mem-type"><option value="">all types</option></select>
+    </div>
+    <div id="mem-list" class="list"></div>
+  </section>
+
+  <section id="view-measures" class="view hidden">
+    <div class="controls">
+      <select id="ms-key"><option value="">pick a series</option></select>
+      <input id="ms-from" type="search" placeholder="from (2026-07-01)">
+      <input id="ms-to" type="search" placeholder="to">
+    </div>
+    <div id="ms-list" class="list"></div>
+    <div id="ms-points" class="list"></div>
+  </section>
+
+  <section id="view-leads" class="view hidden">
+    <div class="controls">
+      <input id="lead-q" type="search" placeholder="Search name, company, role, notes">
+      <select id="lead-status"><option value="">all statuses</option></select>
+      <select id="lead-segment"><option value="">all segments</option></select>
+    </div>
+    <div id="lead-summary" class="chips"></div>
+    <div id="lead-list" class="list"></div>
+  </section>
+
+  <section id="view-events" class="view hidden">
+    <div class="controls">
+      <input id="ev-q" type="search" placeholder="Search activity">
+      <select id="ev-kind"><option value="">all kinds</option></select>
+      <select id="ev-scope"><option value="">all scopes</option></select>
+    </div>
+    <div id="ev-list" class="timeline"></div>
+  </section>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>

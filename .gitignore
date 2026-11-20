@@ -1,0 +1,4 @@
+# build output
+/os-brain
+/os-brain.exe
+tools/__pycache__/
