@@ -9,6 +9,8 @@ ends and three weeks later another session spends the same hour on the same prob
 os-brain keeps what a session learned in a small database inside the project and hands the
 next session the part that matters before its first turn.
 
+The full manual is at https://chka.github.io/os-brain/.
+
 os-brain is the open source edition of the local brain in ns-brain. It is meant for one
 person working on their own machine.
 
