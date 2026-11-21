@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>os-brain · memory that outlives the session</title>
-<meta name="description" content="Open source project memory for coding agents. One static Go binary over SQLite. A session-start hook puts what the project knows into context before the first turn.">
+<meta name="description" content="Open source project memory for coding agents. One Go binary over SQLite. A session-start hook puts what the project knows into context before the first turn.">
 <link rel="canonical" href="https://chka.github.io/os-brain/">
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="style.css">
@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -71,7 +70,7 @@
 
 <span class="g">## DUE NOW</span>
 <span class="r">[ ] #1</span>   <span class="o">rotate the payment webhook secret before
-         the next billing run  (due 09:00, 12m ago)</span>
+         the next billing run  (due 2026-11-20 09:00, 12m ago)</span>
 
 <span class="g">## WHERE THINGS LIVE</span>
   <span class="o">global 4 · deploy 1</span></pre>
@@ -133,7 +132,7 @@
     <div class="sec-body obs">
       <p>Each project keeps its memories in <code>brain/brain.db</code>, a SQLite file readable only by you and listed in <code>.gitignore</code> so it never lands in the repository. There is no server to run and no account to make.</p>
       <p>os-brain never calls home. There is no telemetry and no update check. The only network code in the binary serves the web UI and the MCP server. Both run only when you start them. <a href="privacy.html">What this site and the binary record</a>.</p>
-      <p>The code is on <a href="https://github.com/chka/os-brain">GitHub</a> under the MIT licence. The storage format is the same one ns-brain uses, so a brain can <a href="editions.html">move to the team edition</a> and back without losing a memory.</p>
+      <p>The code is on <a href="https://github.com/chka/os-brain">GitHub</a> under the MIT licence.</p>
     </div>
   </div>
 </section>
@@ -142,7 +141,7 @@
   <div class="wrap">
     <div class="obs">
       <h2>The more you use it,<br>the <em>better</em> it gets.</h2>
-      <p>Free and open source, for one developer on as many projects as you like. You need Go 1.26 or newer.</p>
+      <p>Free and open source, for one developer on as many projects as you like. You need Go 1.26.4 or newer.</p>
 <pre>$ <span class="g">go install github.com/chka/os-brain/cmd/os-brain@latest</span>
 $ <span class="g">cd ~/projects/yours && os-brain init</span></pre>
       <div class="cta-row">
@@ -160,11 +159,10 @@ $ <span class="g">cd ~/projects/yours && os-brain init</span></pre>
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>

@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -202,7 +201,7 @@ $ <span class="g">os-brain relabel "invoices-old" --expect 12 --apply</span></pr
       <li><code>absorb</code> pulls a standalone <code>brain.db</code> in as a project. It reads the source's own <code>brain.json</code> for the name and refuses a <code>--project</code> that disagrees, because a label one character off produces a perfect copy nobody can read. A name that is not this project's takes <code>--project &lt;name&gt; --i-mean-it</code>. <code>--no-events</code> leaves the activity log behind and <code>--force-label</code> accepts a label mismatch. The source is opened read only, so it stays a backup. Running it again skips what is already there.</li>
       <li><code>relabel</code> moves memories filed under another label into this project, for when memories saved over MCP landed under the wrong name. It only ever moves rows to the project running it and refuses a label bound to another directory. <code>--expect &lt;n&gt;</code> says how many you expect and refuses if the count differs, which guards against naming the wrong label.</li>
     </ul>
-    <p>To move a whole project to another machine, or between os-brain and ns-brain, see <a href="editions.html">Editions</a>. A project's own <code>brain/brain.db</code> opens in either as it is.</p>
+    <p>To move a whole project to another machine, copy its <code>brain/brain.db</code> with the project, or <code>export</code> it on one machine and <code>import</code> it on the other under the same project name.</p>
 
     <h2 id="off">Turning the global layer off <a class="anchor" href="#off">#</a></h2>
     <p>A brain holding personal data can set <code>"global": false</code> in <code>brain.json</code>. That turns off reads of the global layer, the project's row in the index and publishing. Its memories stay in its own file and nothing about it reaches the shared store.</p>
@@ -217,11 +216,10 @@ $ <span class="g">os-brain relabel "invoices-old" --expect 12 --apply</span></pr
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>

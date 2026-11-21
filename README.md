@@ -1,6 +1,6 @@
 # os-brain
 
-Project memory for AI coding agents. One static Go binary over SQLite, with no runtime, no
+Project memory for AI coding agents. One Go binary over SQLite, with no runtime, no
 service and no account.
 
 An agent forgets everything at the end of a session, at every compaction and at every
@@ -58,7 +58,8 @@ go build -o ~/.local/bin/os-brain ./cmd/os-brain
 
 Or `go install github.com/chka/os-brain/cmd/os-brain@latest`. The binary has no cgo
 and no dependencies beyond the Go standard library, a pure Go SQLite driver and
-golang.org/x/text, so it cross-compiles to a single static file for each platform.
+golang.org/x/text, so it cross-compiles to every platform Go supports. Build with
+`CGO_ENABLED=0` for a fully static file.
 
 ## Start a brain in a project
 

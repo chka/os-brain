@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -98,7 +97,7 @@ refusing 'confirmed': nothing here can be checked by anyone who was not in this 
       <tr><td>--claim-ok</td><td>The body mentions "supersedes #N" only as history. Without it, a body that claims to replace a live memory is refused unless <code>--supersedes</code> names that id, because writing it in the text retires nothing.</td></tr>
       <tr><td>--confidence &lt;text&gt;</td><td><code>confirmed</code> | <code>reported</code> | <code>assumed</code>. Ranking multiplies by 1.15, 1.0 and 0.8.</td></tr>
       <tr><td>--date &lt;text&gt;</td><td>When it happened, if you are recording it later.</td></tr>
-      <tr><td>--everywhere</td><td>Refused in os-brain: it stores a memory at the organisation level of the team edition and a local brain has no organisation above it. The refusal says so rather than storing it in this project and calling it global.</td></tr>
+      <tr><td>--everywhere</td><td>Always refused: a local brain has no level above the project to store it at. The refusal says so rather than storing it in this project and calling it global.</td></tr>
       <tr><td>--fork-ok</td><td>Supersede a memory that another correction already superseded. Without it this is refused, because two current versions of one fact is what superseding exists to prevent.</td></tr>
       <tr><td>--importance &lt;n&gt;</td><td>1 to 5, 3 neutral. How much is at stake, not how relevant it is. Default <code>3</code>.</td></tr>
       <tr><td>--no-review</td><td>Store no review date, even for a type that defaults to one.</td></tr>
@@ -509,7 +508,7 @@ no problems found</pre>
     <h3>reindex <span class="muted" style="font-weight:400;font-size:.8em">rebuild the FTS index from the memories table</span></h3>
 <p>Rebuilds the full-text index from the memories table, when <code>doctor</code> reports drift.</p>
 <pre>$ <span class="g">os-brain reindex</span></pre>
-    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    <p class="muted">No flags of its own. It prints plain text even with <code>--json</code>.</p>
     </div>
     <div class="cmd" id="vacuum">
     <h3>vacuum <span class="muted" style="font-weight:400;font-size:.8em">checkpoint the WAL and compact the database</span></h3>
@@ -808,7 +807,7 @@ no project called 'nosuchproject' has ever opened this brain, so the note would 
       <tr><th>Flag</th><th>What it does</th></tr>
       <tr><td>--ack &lt;n&gt;</td><td>Done with it.</td></tr>
       <tr><td>--allow-secret</td><td>Store it anyway; it is a false positive.</td></tr>
-      <tr><td>--elsewhere</td><td>Refused in os-brain: it reads other organisations' mailboxes on the team edition and a local brain has none.</td></tr>
+      <tr><td>--elsewhere</td><td>Always refused: a local brain has no other mailboxes to read.</td></tr>
       <tr><td>--expires &lt;n&gt;</td><td>Days until it drops out of their brief.</td></tr>
       <tr><td>--inbox</td><td>List the notes waiting for this project.</td></tr>
       <tr><td>--kind &lt;text&gt;</td><td><code>note</code> | <code>prompt</code>. Default <code>note</code>.</td></tr>
@@ -1083,7 +1082,7 @@ $ <span class="g">OS_BRAIN_MCP_TOKEN=... os-brain mcp --http 0.0.0.0:7801 \
     <p>How a brain is created, seeded and removed again.</p>
     <div class="cmd" id="init">
     <h3>init <span class="muted" style="font-weight:400;font-size:.8em">create a brain in this project and wire the session hooks</span></h3>
-<p>Creates a brain in this project and wires the agent hooks. It writes <code>brain/brain.json</code> (meant to be committed), <code>brain/brain.db</code> (added to <code>.gitignore</code>), <code>brain/HOWTO.md</code> and <code>brain/BEST-PRACTICES.md</code>. At a terminal it asks which agent to wire; with no terminal it wires every agent whose config directory it finds in the project or your home directory. When an agent cannot be wired it prints the block to add by hand rather than pretending. It never writes into <code>CLAUDE.md</code>. Running it again is safe: it brings the database up to the current schema in place and never overwrites it. <a href="agents.html">The agents page</a> shows what it writes for each agent.</p>
+<p>Creates a brain in this project and wires the agent hooks. It writes <code>brain/brain.json</code> (meant to be committed), <code>brain/brain.db</code> (added to <code>.gitignore</code>), <code>brain/HOWTO.md</code>, <code>brain/BEST-PRACTICES.md</code> and <code>brain/autoexec.sh</code> (the script most agents call from their hooks). For Claude Code it also adds slash commands under <code>.claude/commands/</code>. At a terminal it asks which agent to wire; with no terminal it wires every agent whose config directory it finds in the project or your home directory. When an agent cannot be wired it prints the block to add by hand rather than pretending. It never writes into <code>CLAUDE.md</code>. Running it again is safe: it brings the database up to the current schema in place and never overwrites it. <a href="agents.html">The agents page</a> shows what it writes for each agent.</p>
 <p>It refuses a project where a file it would write is a symbolic link or sits under one. It checks before writing anything: a cloned repository could commit a link at <code>.claude/settings.json</code> that points at a file in your home directory.</p>
 <pre>$ <span class="g">os-brain init --agent claude</span>
 brain ready at /home/you/src/orchard/brain/brain.db
@@ -1110,7 +1109,7 @@ brain ready at /home/you/src/orchard/brain/brain.db
     </div>
     <div class="cmd" id="uninstall">
     <h3>uninstall <span class="muted" style="font-weight:400;font-size:.8em">remove it again: dry run unless --apply, keeps the database unless --purge</span></h3>
-<p>Removes the hooks, the docs and the config again. It is a dry run unless you add <code>--apply</code> and it takes a backup first either way. It never deletes <code>brain.db</code> without <code>--purge</code>: one <code>init</code> recreates everything else while nothing recreates the database. It only acts on the brain the command opened; pointing it at another one with a path or <code>--dir</code> is refused.</p>
+<p>Removes the hooks, the docs and the config again. It is a dry run unless you add <code>--apply</code>. When it does act it takes a backup first, with or without <code>--purge</code>. It never deletes <code>brain.db</code> without <code>--purge</code>: one <code>init</code> recreates everything else while nothing recreates the database. It only acts on the brain the command opened; pointing it at another one with a path or <code>--dir</code> is refused.</p>
 <pre>$ <span class="g">os-brain uninstall</span><span class="c">            # the plan</span>
 $ <span class="g">os-brain uninstall --apply</span><span class="c">    # hooks and files gone, brain.db kept</span></pre>
     <div class="table-scroll">
@@ -1146,13 +1145,13 @@ $ <span class="g">os-brain uninstall --apply</span><span class="c">    # hooks a
 <p>Prints the build and the schema version. <code>--version</code> and <code>-v</code> work too.</p>
 <pre>$ <span class="g">os-brain version</span>
 os-brain 26110501 (schema v16)</pre>
-    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    <p class="muted">No flags of its own. It prints plain text even with <code>--json</code>.</p>
     </div>
     <div class="cmd" id="help">
     <h3>help <span class="muted" style="font-weight:400;font-size:.8em">show full command surface</span></h3>
 <p><code>help</code> lists every command with the scoping rule and the decay tiers. <code>help &lt;command&gt;</code> prints that command's own flags, read from the same registration the MCP schemas use, so the list cannot drift from the code. The flag tables on this page were generated from it.</p>
 <pre>$ <span class="g">os-brain help recall</span></pre>
-    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    <p class="muted">No flags of its own. It prints plain text even with <code>--json</code>.</p>
     </div>
 
     <h2 id="env">Environment <a class="anchor" href="#env">#</a></h2>
@@ -1256,11 +1255,10 @@ os-brain 26110501 (schema v16)</pre>
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>

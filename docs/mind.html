@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -104,13 +103,13 @@ $ <span class="g">os-brain capture "from now on always show me the diff before y
     <table class="flags">
       <tr><th>Class</th><th>What puts a prompt there</th></tr>
       <tr><td>exhibit</td><td>Something shown rather than said: a fenced code block, a quoted line starting with <code>&gt;</code>, "for example" or "someone said". Checked first.</td></tr>
-      <tr><td>directive</td><td>A narrow list of literal cues: "from now on", "always", "never", "every time", "whenever", "by default", "make sure you", "I want you to".</td></tr>
+      <tr><td>directive</td><td>A narrow list of literal cues: "from now on", "always", "never", "each time", "every time", "whenever", "by default", "make sure you", "I want you to".</td></tr>
       <tr><td>taste</td><td>"I like", "I love", "I hate", "I prefer", "I can't stand".</td></tr>
       <tr><td>command</td><td>Everything else, which is most prompts.</td></tr>
     </table>
     </div>
     <p>The sorting leans towards "not a rule" at every step and the reason is an asymmetry. Storing a one-off as a rule rewrites every future session and looks the same afterwards as a rule you really stated. Missing a rule costs one restatement. Exhibit comes first for the same reason: a pasted transcript with somebody else's "always do X" in it must never become your standing rule.</p>
-    <p>Classification is English only. A prompt in another script is stored with no class and <code>utterances</code> counts how many there were, so the limit is visible instead of quietly patched over with a half-tuned matcher.</p>
+    <p>Classification is English only. A prompt in another language is stored as a <code>command</code> marked as not classified and <code>utterances</code> counts how many there were, so the limit is visible instead of quietly patched over with a half-tuned matcher.</p>
 
     <h2 id="kept">What is kept and for how long <a class="anchor" href="#kept">#</a></h2>
     <ul>
@@ -139,7 +138,7 @@ $ <span class="g">os-brain capture "from now on always show me the diff before y
 $ <span class="g">os-brain ladder 6</span>
 <span class="o">#6 is law, stated 3x
   current state: law.</span></pre>
-    <p>Each state is recorded once with its date and nothing lowers it. A session with no session id never promotes anything to law, since a missing id compared with a stored one would always look like a different session.</p>
+    <p>Each state is recorded once with its date and nothing lowers it. The session id comes from the agent (<code>OS_BRAIN_SESSION_ID</code> or <code>CLAUDE_CODE_SESSION_ID</code>). Without one, each command counts as its own session, named after the host and the process id, so a memory saved once and restated once by hand from a shell becomes law.</p>
     <p>The ladder is there for the agent. A session that finds a fact disputed treats it as an open question. One that finds it settled as law stops arguing it. It does not change how a memory ranks in recall or whether it goes into the brief.</p>
 
     <h2 id="object">Disagreeing with a memory <a class="anchor" href="#object">#</a></h2>
@@ -193,11 +192,10 @@ $ <span class="g">os-brain whoami --forget sources</span>
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>

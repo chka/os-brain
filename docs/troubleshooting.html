@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -104,7 +103,7 @@ db=/home/you/.claude/os-brain/brain.db</span></pre>
       <tr><td>Memories filed under another project's name</td><td>Something named the wrong project, usually over MCP. <code>os-brain relabel &lt;label&gt; --expect &lt;n&gt; --apply</code> moves them back.</td></tr>
       <tr><td>A second directory refused for a project name</td><td>The name is bound to the directory that first used it, so a clone or a same-named checkout cannot read the first one's memories. Give the new one its own <code>"project"</code> in <code>brain.json</code>, or run <code>os-brain relabel --claim</code> at a terminal if you really moved it.</td></tr>
       <tr><td>Phantom projects in the index</td><td>Something meant for a scratch directory ran against your real shared store. For anything throwaway, point <code>CLAUDE_CONFIG_DIR</code> and <code>OS_BRAIN_GLOBAL_DB</code> at scratch paths first.</td></tr>
-      <tr><td>A project's <code>brain.json</code> points at a team server or a zero-knowledge brain</td><td>That project was set up with ns-brain's team edition. os-brain cannot read those brains and refuses rather than answer from a local file that does not hold the project's memories. <a href="editions.html">Editions</a> covers moving between the two.</td></tr>
+      <tr><td>A project's <code>brain.json</code> points at a server or an encrypted brain</td><td>os-brain keeps memories only in local files, so it cannot read that project's memories. It refuses rather than answer from a local file that does not hold them.</td></tr>
     </table>
     </div>
 
@@ -116,7 +115,7 @@ db=/home/you/.claude/os-brain/brain.db</span></pre>
       <tr><td>"already holds this title ... Storing this would destroy the existing body"</td><td>A careless save overwriting a fact.</td><td><code>--update</code> (the old body goes to history) or <code>--supersedes</code></td></tr>
       <tr><td>"#2 has already been superseded by #4"</td><td>Two current versions of one fact.</td><td><code>--supersedes 4</code> to chain, or <code>--fork-ok</code></td></tr>
       <tr><td>"refusing 'confirmed'"</td><td>A session marking its own guess as fact.</td><td><code>--source</code>, <code>--ref</code> or <code>--source "stated by the user"</code></td></tr>
-      <tr><td>"this looks like" a credential or API key</td><td>A token in a memory, which then sits in every backup, snapshot and export.</td><td>Store a pointer to where it lives instead. <code>--allow-secret</code> only for a false positive. The prompt hook, <code>lead</code> and <code>object</code> have no override.</td></tr>
+      <tr><td>"refusing to store what looks like" a credential or API key</td><td>A token in a memory, which then sits in every backup, snapshot and export.</td><td>Store a pointer to where it lives instead. <code>--allow-secret</code> only for a false positive. The prompt hook, <code>lead</code> and <code>object</code> have no override.</td></tr>
       <tr><td><code>forget</code> refuses a pinned memory or a guardrail</td><td>A session deleting a rule because it got in the way.</td><td>Re-read it, then <code>--force</code>, or supersede it</td></tr>
       <tr><td><code>forget</code> refuses a memory that supersedes others</td><td>Deleting it would bring back the old facts it replaced on purpose.</td><td>Supersede it with a correct version, or <code>--force</code> to accept them coming back</td></tr>
       <tr><td><code>update</code> refuses an empty body</td><td>Wiping a memory by accident. An empty <code>--body</code> is usually a shell substitution that failed.</td><td><code>--force</code></td></tr>
@@ -216,11 +215,10 @@ $ <span class="g">os-brain update 42 --unsupersede</span>   <span class="c"># a 
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>

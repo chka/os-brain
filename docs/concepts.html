@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -152,9 +151,9 @@
 <span class="k">#8</span>  <span class="c">[deploy:prod/infra]</span> <span class="o">(score 1.692)</span> prod invoices run behind the eu edge proxy
       <span class="o">cert renewal is on the proxy, not the app</span>
 
-<span class="c">sees:       deploy:prod, deploy, global
-never sees: deploy:staging, where a memory about staging certificates sits</span></pre>
-    <p>Everything defaults to <code>global</code>, which means "everywhere in this project", not "everywhere in the world". You declare scopes in <code>brain.json</code> with <code>os-brain scope add deploy:prod --desc "..."</code>. A save into a scope nobody declared still works but warns you and names the command that declares it. <code>os-brain map</code> compares what is declared with what is actually stored, so a scope someone made up by a typo shows up under UNDECLARED SCOPES IN USE.</p>
+<span class="c"># sees:       deploy:prod, deploy, global
+# never sees: deploy:staging, where a memory about staging certificates sits</span></pre>
+    <p>Everything defaults to <code>global</code>, which means "everywhere in this project", not "everywhere in the world". You declare scopes in <code>brain.json</code> with <code>os-brain scope add deploy:prod --desc "..."</code>. Once <code>brain.json</code> declares any scope, a save into one it does not list still works but warns you and names the command that declares it. <code>os-brain map</code> compares what is declared with what is actually stored, so a scope someone made up by a typo shows up under UNDECLARED SCOPES IN USE.</p>
     <p>Use scopes when a project has truly separate areas. Two or three are worth it. A dozen is a filing system you will stop keeping up and a memory left in <code>global</code> is still found.</p>
 
     <h2 id="confidence">How sure and from where <a class="anchor" href="#confidence">#</a></h2>
@@ -269,11 +268,10 @@ $ <span class="g">os-brain review --stale-days 90</span>   <span class="c"># tie
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>

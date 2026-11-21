@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -97,7 +96,7 @@ $ <span class="g">os-brain version</span></pre>
     <p>Read the message. Every refusal says what it is protecting and how to get past it when you really mean it: a memory that already covers the same thing, a pinned rule, a delete that would bring back facts you corrected, text that looks like a password. Do not work around a refusal you do not understand. That is how memories get lost.</p>
 
     <h3 id="damaged">Something looks damaged</h3>
-    <p><code>os-brain doctor</code> checks the brain and says what is wrong. <code>os-brain doctor --fix</code> repairs what it can and names the rest. Do not fix the database by hand. <code>wakeup</code> takes a safety copy at most once a day when the store has changed: <code>os-brain backup --list --verify</code> lists the copies and checks each one, <code>os-brain backup --restore &lt;file&gt;</code> shows what would change and adding <code>--apply</code> puts one back.</p>
+    <p><code>os-brain doctor</code> checks the brain and says what is wrong. <code>os-brain doctor --fix</code> repairs what it can and names the rest. Do not fix the database by hand. <code>wakeup</code> takes a safety copy whenever the store has changed since the last one and at least once a day: <code>os-brain backup --list --verify</code> lists the copies and checks each one, <code>os-brain backup --restore &lt;file&gt;</code> shows what would change and adding <code>--apply</code> puts one back.</p>
 
     <p>The full list is on <a href="troubleshooting.html">the troubleshooting page</a>. Still stuck? <a href="#tell-us">Tell us</a>, with the command you ran and what it printed.</p>
   </main>
@@ -110,11 +109,10 @@ $ <span class="g">os-brain version</span></pre>
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>

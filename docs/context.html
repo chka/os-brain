@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -142,7 +141,7 @@
     <div class="obs sec-body">
       <p>A brain beside another memory store that loads by itself guarantees a contradiction nobody sees: both are read into every session and the one that loads first wins, whichever is right.</p>
       <p><code>init</code> looks for one in both places it lives: a <code>MEMORY.md</code> or <code>memory/</code> directory in the project and Claude Code's own auto-memory outside the repository under <code>~/.claude/projects/&lt;slug&gt;/memory/</code>. When it finds one it says so. It never moves, rewrites or deletes it, because your own memory files are not <code>init</code>'s to destroy.</p>
-      <p>If you want a committed, readable copy of what the brain holds, generate it with <code>os-brain snapshot --out MEMORY.md</code>. It carries a DO NOT EDIT header: edit the brain and regenerate, never the other way round.</p>
+      <p>If you want a committed, readable copy of what the brain holds, generate it with <code>os-brain snapshot --out &lt;file&gt; --allow-tracked</code>. Without that flag a path inside the repository that git does not ignore is refused, because a snapshot is every memory in cleartext. It carries a DO NOT EDIT header: edit the brain and regenerate, never the other way round. Do not call it <code>MEMORY.md</code> at the project root: <code>init</code> and the brief would report it as a second memory store.</p>
     </div>
   </div>
 </section>
@@ -194,11 +193,10 @@ $ <span class="g">os-brain init</span></pre>
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>

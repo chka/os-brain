@@ -22,7 +22,6 @@
       <a href="agents.html">Agents</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="help.html">Help</a>
     </div>
     <div class="nav-actions">
@@ -61,7 +60,7 @@
   <main class="doc-body">
 
     <h2 id="get">1 · Get the binary <a class="anchor" href="#get">#</a></h2>
-    <p>os-brain is built from source. You need Go 1.26 or newer and nothing else: no cgo and no C compiler.</p>
+    <p>os-brain is built from source. You need Go 1.26.4 or newer and nothing else: no cgo and no C compiler.</p>
 <pre>$ <span class="g">git clone https://github.com/chka/os-brain</span>
 $ <span class="g">cd os-brain</span>
 $ <span class="g">go build -o ~/.local/bin/os-brain ./cmd/os-brain</span>
@@ -69,7 +68,7 @@ $ <span class="g">os-brain version</span>
 <span class="o">os-brain 26110501 (schema v16)</span></pre>
     <p>Or in one line, which puts the binary in <code>$(go env GOPATH)/bin</code> (usually <code>~/go/bin</code>):</p>
 <pre>$ <span class="g">go install github.com/chka/os-brain/cmd/os-brain@latest</span></pre>
-    <p>The only dependencies are the Go standard library, a pure Go SQLite driver and <code>golang.org/x/text</code>. The result is one static file. It cross-compiles like any Go program, so <code>GOOS=darwin GOARCH=arm64 go build .</code> on a Linux box gives you a Mac binary.</p>
+    <p>The only dependencies are the Go standard library, a pure Go SQLite driver and <code>golang.org/x/text</code>. The result is one file, fully static when built with <code>CGO_ENABLED=0</code> (the default where no C compiler is installed). It cross-compiles like any Go program, so <code>GOOS=darwin GOARCH=arm64 go build ./cmd/os-brain</code> on a Linux box gives you a Mac binary.</p>
     <p><b>Put the binary on the <code>PATH</code> your agent's hooks run with.</b> That is often not the same <code>PATH</code> as your interactive shell. A hook that cannot find <code>os-brain</code> fails without telling anyone and the session starts with no brief.</p>
     <p>There are no release downloads yet and no installer script. Read the source first if you like: it is all in <a href="https://github.com/chka/os-brain">the repository</a>.</p>
 
@@ -205,7 +204,7 @@ $ <span class="g">os-brain recall "TLS nginx"</span></pre>
     </div>
 
     <h3 id="windows">Windows</h3>
-    <p>os-brain builds for Windows with <code>GOOS=windows go build .</code>. Setting up hooks there is not covered. The hooks <code>init</code> writes expect a Unix shell: Claude Code's set <code>OS_BRAIN_HOME</code> in shell syntax and the other agents' call <code>brain/autoexec.sh</code>, a shell script. We haven't tested either on Windows, so expect to set them up by hand.</p>
+    <p>os-brain builds for Windows with <code>GOOS=windows go build ./cmd/os-brain</code>. Setting up hooks there is not covered. The hooks <code>init</code> writes expect a Unix shell: Claude Code's set <code>OS_BRAIN_HOME</code> in shell syntax and the other agents' call <code>brain/autoexec.sh</code>, a shell script. We haven't tested either on Windows, so expect to set them up by hand.</p>
 
     <h2 id="upgrade">Upgrading <a class="anchor" href="#upgrade">#</a></h2>
     <p>There is no upgrade command and no update check. To move to a newer version, build it again:</p>
@@ -220,7 +219,7 @@ $ <span class="g">os-brain doctor</span>    <span class="c"># check the store on
 <pre>$ <span class="g">os-brain uninstall</span>                  <span class="c"># dry run: every file and line it would touch</span>
 $ <span class="g">os-brain uninstall --apply</span>          <span class="c"># hooks and files go, brain.db STAYS</span>
 $ <span class="g">os-brain uninstall --apply --purge</span>  <span class="c"># also deletes the memory</span></pre>
-    <p>The dry run lists every file, hook and <code>.gitignore</code> line it would remove, then says <code>Nothing has been changed. Add --apply to do it.</code> A dump is written first either way. Without <code>--purge</code> your memories stay, so one <code>os-brain init</code> puts everything else back. The one exception is <code>brain/brain.json</code>, which is deleted: copy it first if you set scopes or project notes in it.</p>
+    <p>The dry run lists every file, hook and <code>.gitignore</code> line it would remove, then says <code>Nothing has been changed. Add --apply to do it.</code> With <code>--apply</code> it writes a dump first, with or without <code>--purge</code>. Without <code>--purge</code> your memories stay, so one <code>os-brain init</code> puts everything else back. The one exception is <code>brain/brain.json</code>, which is deleted: copy it first if you set scopes or project notes in it.</p>
     <p>It removes only the hooks <code>init</code> wrote for this brain, so your own hooks and other tools' hooks stay. Removal is a command because an agent that did it by hand once deleted a project's whole <code>.claude/settings.json</code>.</p>
 
     <h2 id="agent-rules">If you are the agent doing this <a class="anchor" href="#agent-rules">#</a></h2>
@@ -242,11 +241,10 @@ $ <span class="g">os-brain uninstall --apply --purge</span>  <span class="c"># a
       <a href="docs.html">Docs</a>
       <a href="cli.html">CLI</a>
       <a href="mcp.html">MCP</a>
-      <a href="editions.html">Editions</a>
       <a href="privacy.html">Privacy</a>
       <a href="https://github.com/chka/os-brain">GitHub</a>
     </div>
-    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host">os-brain is open source under the MIT licence.</div>
     <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
   </div>
 </footer>
