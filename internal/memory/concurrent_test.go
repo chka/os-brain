@@ -140,3 +140,45 @@ func TestASecondSessionIsAlertedInsideTheWindowAndOnlyThen(t *testing.T) {
 		t.Fatalf("an unrelated fact must not alert:\n%s", out)
 	}
 }
+
+// A plain terminal has no session id, so each command falls back to its own process
+// identity. Two commands typed one after the other used to read as two sessions, and every
+// write from a shell alerted about the one before it. A terminal and an agent session are
+// still two writers, so that pair still alerts.
+func TestWritesFromAPlainTerminalNeverAlertEachOther(t *testing.T) {
+	if Concurrent("shell:laptop:101", "shell:laptop:102", 100, 110) {
+		t.Fatal("two shell commands were taken for two sessions")
+	}
+	if !Concurrent("shell:laptop:101", "sessionAAA", 100, 110) || !Concurrent("sessionAAA", "shell:laptop:102", 100, 110) {
+		t.Fatal("a terminal write and an agent session's write must still count as two writers")
+	}
+	if !Concurrent("sessionAAA", "sessionBBB", 100, 110) {
+		t.Fatal("two real sessions inside the window must still count")
+	}
+}
+
+// A write that supersedes a row has already settled which of the two stands, so the row it
+// names is not "another session's write you may disagree with".
+func TestTheRowAWriteSupersedesIsNotAlertedAbout(t *testing.T) {
+	s := newTestStore(t)
+	defer s.Close()
+	t.Setenv("OS_BRAIN_SESSION_ID", "sessionAAA")
+	var out bytes.Buffer
+	if err := s.Remember(&out, RememberArgs{Type: "decision", Title: "nginx terminates TLS on the edge box",
+		Body: "origin speaks plain HTTP on loopback", Scope: store.DefaultScope}); err != nil {
+		t.Fatal(err)
+	}
+	var first int64
+	if err := s.DB.QueryRow("SELECT MAX(id) FROM memories").Scan(&first); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("OS_BRAIN_SESSION_ID", "sessionBBB")
+	out.Reset()
+	if err := s.Remember(&out, RememberArgs{Type: "decision", Title: "TLS terminates on the origin as well",
+		Body: "mTLS from edge to origin", Scope: store.DefaultScope, Supersedes: first}); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out.String(), "ALERT") {
+		t.Fatalf("a write was alerted about the very row it supersedes:\n%s", out.String())
+	}
+}

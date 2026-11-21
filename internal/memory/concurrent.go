@@ -17,9 +17,14 @@ const ConcurrentWindow = 120
 
 // Concurrent is the WHO and WHEN half: a different, known session, inside the window. An
 // empty session on either side is "unknown", never "different": rows written before
-// sessions were tracked must not alert everybody for ever.
+// sessions were tracked must not alert everybody for ever. Two process identities (writes
+// from a plain terminal, where no host exported a session) are not two sessions either:
+// each command is its own process, so every write from a shell used to alert about the
+// command typed just before it. A terminal write and an agent session's write are still two
+// different writers and still alert.
 func Concurrent(otherSession, mine string, otherAt, now int64) bool {
-	if otherSession == "" || mine == "" || store.SameSession(otherSession, mine) {
+	if otherSession == "" || mine == "" || store.SameSession(otherSession, mine) ||
+		(store.IsProcessSession(otherSession) && store.IsProcessSession(mine)) {
 		return false
 	}
 	age := now - otherAt

@@ -52,6 +52,12 @@ func SessionID() string {
 	return fmt.Sprintf("shell:%s:%d", host, os.Getpid())
 }
 
+// IsProcessSession reports whether id is the process identity SessionID falls back to when
+// no host exported a session. It names one short-lived process, not a conversation: two
+// commands typed in the same terminal get two of them. So it can say "unknown", never
+// "a different session".
+func IsProcessSession(id string) bool { return strings.HasPrefix(id, "shell:") }
+
 // ShortSession is what gets rendered. Session ids are UUIDs and printing one in full
 // costs a third of the line while adding nothing: the reader only needs to see whether
 // two rows came from the same place.
@@ -59,7 +65,7 @@ func ShortSession(id string) string {
 	if id == "" {
 		return "?"
 	}
-	if strings.HasPrefix(id, "shell:") {
+	if IsProcessSession(id) {
 		return "shell"
 	}
 	if len(id) > 8 {

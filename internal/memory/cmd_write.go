@@ -181,7 +181,7 @@ func (s *Store) Remember(w io.Writer, a RememberArgs) error {
 	if err := s.checkSupersedesTarget(tx, a.Supersedes); err != nil {
 		return err
 	}
-	alert, err := s.concurrentAlert(tx, a.Scope, m.title, a.Type, m.ts)
+	alert, err := s.concurrentAlert(tx, a.Scope, m.title, a.Type, m.ts, a.Supersedes)
 	if err != nil {
 		return err
 	}
@@ -631,8 +631,9 @@ func (s *Store) forkRefusal(tx *sql.Tx, retracted, by int64, title string) error
 
 // concurrentAlert looks for a live row another session wrote into this scope inside
 // ConcurrentWindow that may be about the same thing, and words the alert. It does not
-// refuse: nothing here can tell A from not-A, so it tells the agent to ask.
-func (s *Store) concurrentAlert(q store.Querier, scope, title, memType string, now int64) (string, error) {
+// refuse: nothing here can tell A from not-A, so it tells the agent to ask. The row this
+// write supersedes is skipped: naming it with --supersedes already settles which stands.
+func (s *Store) concurrentAlert(q store.Querier, scope, title, memType string, now, supersedes int64) (string, error) {
 	rows, err := q.Query("SELECT id, title, mem_type, session, updated_at FROM memories "+
 		"WHERE project=? AND scope=? AND superseded_by IS NULL AND updated_at >= ? "+
 		"ORDER BY updated_at DESC", s.Env.Project, scope, now-ConcurrentWindow)
@@ -645,6 +646,9 @@ func (s *Store) concurrentAlert(q store.Querier, scope, title, memType string, n
 		var otherTitle, otherType, session string
 		if err := rows.Scan(&id, &otherTitle, &otherType, &session, &at); err != nil {
 			return "", err
+		}
+		if id == supersedes {
+			continue
 		}
 		if Concurrent(session, s.Env.SessionID(), at, now) &&
 			ConcurrentSubject(title, memType, otherTitle, otherType) {
