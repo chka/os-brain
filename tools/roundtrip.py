@@ -43,8 +43,8 @@ def sha(path):
     return h.hexdigest()
 
 
-def build(src, out):
-    r = subprocess.run(["go", "build", "-o", out, "."], cwd=src, capture_output=True, text=True)
+def build(src, out, pkg="."):
+    r = subprocess.run(["go", "build", "-o", out, pkg], cwd=src, capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit(f"building {src} failed:\n{r.stdout}{r.stderr}")
     return out
@@ -52,7 +52,7 @@ def build(src, out):
 
 shutil.rmtree(SCRATCH, ignore_errors=True)
 os.makedirs(CFG)
-OSB = build(REPO, os.path.join(SCRATCH, "bin", "os-brain"))
+OSB = build(REPO, os.path.join(SCRATCH, "bin", "os-brain"), "./cmd/os-brain")
 if NSB_SRC:
     NSB = build(NSB_SRC, os.path.join(SCRATCH, "bin", "ns-brain"))
 else:

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The brain from your phone</title>
+<meta name="description" content="Reach your os-brain from the Claude app on your phone: the built-in OAuth sign-in, an HTTPS address and which brain the phone sees.">
+<link rel="canonical" href="https://chka.github.io/os-brain/phone.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Docs · the phone</div>
+    <h1>Your brain,<br>from your <em>phone</em>.</h1>
+    <p class="lede">The brain does not live on your phone and it should not. The Claude app calls it where it lives, at an HTTPS address you publish. The sign-in the app insists on comes from the same binary that holds your memories. Nothing else to install and nothing to sign up for.</p>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="toc">
+    <div class="t">On this page</div>
+    <a href="#why">Why a connector</a>
+    <a href="#oauth">What the app needs</a>
+    <a href="#address">Giving it an address</a>
+    <a href="#which">Which brain the phone sees</a>
+    <a href="#app">Adding it in the app</a>
+    <a href="#keep">Keeping it running</a>
+    <a href="#wrong">When it does not work</a>
+  </aside>
+
+  <main class="doc-body">
+
+    <h2 id="why">Why a connector <a class="anchor" href="#why">#</a></h2>
+    <p>You are away from the keyboard and something about the project comes to mind: a decision, a number, a thing to check tomorrow. Your phone is there and your brain is not. The web UI is no help here, since it answers only on the machine it runs on.</p>
+    <p>A custom connector fixes that. The brain's MCP server already works over HTTP, so all that is left is to put it somewhere the app can reach and to handle the sign-in the app asks for before it will talk to anything. After that every chat on your phone has the brain's tools: it can read what the project decided last month and save what you just decided, with no session open anywhere and nothing running on the phone.</p>
+
+    <h2 id="oauth">What the app needs and why a token is not enough <a class="anchor" href="#oauth">#</a></h2>
+    <p>A remote connector cannot use a token pasted into a config file. That works for stdio and for clients you configure yourself (<a href="mcp.html#http">the MCP page</a> covers it). The Claude app follows the MCP sign-in spec (OAuth): a 401 that says where to find out who can sign you in, discovery documents at well-known URLs, a way to register itself so there is no client id to paste and HTTPS on every address involved. Miss any of these and the app gives no clear error. It just will not connect.</p>
+    <p>So the sign-in server is built into the binary. One flag turns it on and it is off unless you give that flag:</p>
+<pre>$ <span class="g">OS_BRAIN_MCP_TOKEN="$TOKEN" os-brain mcp --http 127.0.0.1:7801 \
+      --public-url https://laptop.your-tailnet.ts.net \
+      --oauth-redirect-host claude.ai</span>
+[brain] MCP on http://127.0.0.1:7801/mcp 127.0.0.1:7801 (loopback only) · 58 tools · protocol 2025-06-18
+[brain] OAuth for hosted clients at https://laptop.your-tailnet.ts.net: add https://laptop.your-tailnet.ts.net/mcp as a connector and type the token on the login page. /mcp takes only the tokens that login issues, not --token itself</pre>
+    <p>The password on the login page is that token. It is the only secret in the whole setup, so treat it like one: it guards every memory the server can reach and the tools that can change them. With <code>--public-url</code> it works only as a password and <code>/mcp</code> will not accept it as a bearer, so the login page is the only place anyone can try it. Wrong guesses there and at <code>/mcp</code> share one counter per source address: after five, that address waits a minute, then two, doubling up to an hour, while you can still sign in from anywhere else. Every refusal and every success is logged on stderr and the password never appears in the log.</p>
+    <p>The login page names the site your access is about to be sent to. Any app can register under any name, so that line is the only thing on the page an attacker cannot choose: read it before you type. If it is not the app you are connecting, stop. Better still, do not rely on reading it late at night: <code>--oauth-redirect-host claude.ai</code> lets only redirects to that host register, so a link that would send your login anywhere else is refused before any page appears. Repeat the flag for each app you use.</p>
+    <p>What the app gets after you sign in is an access token that lasts a day and a refresh token that renews it, rotated each time it is used. Only hashes of them are kept, in <code>mcp-oauth.json</code> beside the shared store (mode 600), so restarting the server does not sign your phone out and a backup of that file holds nothing that works as a token.</p>
+    <p>The flag comes with refusals, better met here than at the app:</p>
+<pre>$ <span class="g">os-brain mcp --http 127.0.0.1:7801 --public-url http://laptop.example</span>
+--public-url must be an https URL (the authorization endpoints are only allowed over TLS): got "http://laptop.example"
+$ <span class="g">os-brain mcp --http 127.0.0.1:7801 --public-url https://laptop.example</span>
+--public-url needs --token: it is the password on the login page</pre>
+    <p>A sign-in server over plain HTTP hands your password to anyone on the network path. A login page with no password is a door anyone can open.</p>
+
+    <h2 id="address">Giving it an address <a class="anchor" href="#address">#</a></h2>
+    <p>The server listens only on loopback. Something has to hold a certificate for a public name, terminate HTTPS and pass requests on to that local port. Any reverse proxy with a real certificate works. Tailscale Funnel is the shortest route, because Tailscale holds the certificate for your machine's name on your tailnet and there is no proxy to run and no certificate to renew:</p>
+<pre>$ <span class="g">tailscale funnel --bg --https=443 7801</span></pre>
+    <p>You turn Funnel on once for the tailnet, with MagicDNS and HTTPS certificates, in the Tailscale admin console. The certificate for the name is fetched the first time it is used, so the first HTTPS request can hang for a while; wait before you decide something is wrong.</p>
+    <p>Behind a proxy on loopback every request arrives from <code>127.0.0.1</code>, so the server takes the source address for its lockout from the last entry in <code>X-Forwarded-For</code>, the one the proxy appended. The public name is added to the allowed Host names automatically from <code>--public-url</code>.</p>
+    <p>Give the app a URL without a port in it: publish on 443.</p>
+
+    <h2 id="which">Which brain the phone sees <a class="anchor" href="#which">#</a></h2>
+    <p>The server uses the brain of the folder it runs in, or the one <code>OS_BRAIN_HOME</code> names. Run it from a project on the shared store and it serves every project in that store: each call names one with <code>_project</code>. A call that names none is refused with the list of projects it has, so the model can ask again. A project with its own <code>brain.db</code> is not in that store and answers with no memories, which looks like an empty brain but is not.</p>
+    <p>Where a save goes is decided the same way, so get this right before you rely on it. Run the connector on the machine that holds the brain. Then what you dictate on the phone is in the brain your agent reads tomorrow.</p>
+
+    <h2 id="app">Adding it in the app <a class="anchor" href="#app">#</a></h2>
+    <p>In the Claude app, add a custom connector. The URL is your public name with <code>/mcp</code> on the end, the same endpoint every other client uses; the root serves nothing. Leave client id and secret empty, since the app registers itself. Connecting opens the login page: check the site it names, type the token and allow access. The chat now has the brain's tools, the same list the server gives any other client.</p>
+
+    <h2 id="keep">Keeping it running <a class="anchor" href="#keep">#</a></h2>
+    <p>Nothing to buy and no account with us. What it does need is a short list: a public HTTPS name in front of the port, something that restarts the process after a reboot (a systemd unit or a launchd job that passes the token in <code>OS_BRAIN_MCP_TOKEN</code>, so it never shows in <code>ps</code>) and a password you treat as a password.</p>
+    <p>The machine also has to be awake. No engineering gets around that: a phone calling a desktop that is asleep gets nothing. If the brain is on a laptop you close, the phone reaches it only while the laptop is open. A second machine has its own brain, so a connector to it reaches different memories, not a copy.</p>
+
+    <h2 id="wrong">When it does not work <a class="anchor" href="#wrong">#</a></h2>
+    <div class="table-scroll">
+    <table>
+      <tr><th>What you see</th><th>What it is</th></tr>
+      <tr><td>The app says the connector failed and your log is empty</td><td>The request never arrived. Check the URL has no port and ends in <code>/mcp</code> and that the public name resolves and serves HTTPS.</td></tr>
+      <tr><td>The first HTTPS request hangs</td><td>The certificate for the name is still being fetched.</td></tr>
+      <tr><td>404 on every request</td><td>The endpoint is <code>/mcp</code>. The root serves nothing.</td></tr>
+      <tr><td>Refuses to start, naming <code>--public-url</code></td><td>Either a plain http URL or no token. Both are refused on purpose.</td></tr>
+      <tr><td>"redirect_uri is not on this server's --oauth-redirect-host list"</td><td>The app redirects to a host you did not allow. Add it with another <code>--oauth-redirect-host</code>.</td></tr>
+      <tr><td>"too many wrong passwords; try again in ..." on the login page</td><td>This address is waiting after wrong guesses. Wait for the time it gives, or sign in from another address.</td></tr>
+      <tr><td>"this server fronts a shared brain"</td><td>It is working. Name the project with <code>_project</code>, or set <code>OS_BRAIN_PROJECT</code> in the server's environment.</td></tr>
+      <tr><td>A project you know has memories answers with none</td><td>Right server, wrong store. A server on the shared store cannot see a project that has its own file.</td></tr>
+    </table>
+    </div>
+    <p><a href="troubleshooting.html">More of these, including the CLI side.</a></p>
+
+  </main>
+</div>
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain CLI reference</title>
+<meta name="description" content="Every os-brain command and flag, generated from the binary's own help, with examples and the reason behind each refusal.">
+<link rel="canonical" href="https://chka.github.io/os-brain/cli.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Docs · CLI reference</div>
+    <h1>Every command.<br><em>Six</em> of them<br>do the work.</h1>
+    <p class="lede">You reach for the rest when something is wrong, when a fact needs fixing or when you work across projects. Every command and flag on this page was generated from the binary's own <code>help</code> output, so nothing is missing and nothing is invented. <code>os-brain help &lt;command&gt;</code> shows the same list in your terminal.</p>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="toc">
+    <div class="t">On this page</div>
+    <a href="#six">The six</a>
+    <a href="#write">Writing</a>
+    <a href="#read">Reading</a>
+    <a href="#correct">Correcting</a>
+    <a href="#tasks">Tasks and measures</a>
+    <a href="#hygiene">Keeping it healthy</a>
+    <a href="#deleting">Deleting</a>
+    <a href="#data">Export, import, backup and snapshot</a>
+    <a href="#store">Where the memories live</a>
+    <a href="#cross">Across projects</a>
+    <a href="#mind">The user model and other optional features</a>
+    <a href="#surfaces">Other ways in</a>
+    <a href="#lifecycle">Install and lifecycle</a>
+    <a href="#env">Environment</a>
+    <a href="#index">All commands</a>
+  </aside>
+
+  <main class="doc-body">
+
+    <h2 id="six">The six you use every day <a class="anchor" href="#six">#</a></h2>
+    <p>Learn these six and you know the tool. Everything after this section can wait until you need it.</p>
+<pre>$ <span class="g">os-brain brief</span>                        <span class="c"># what this project believes. Read it first.</span>
+$ <span class="g">os-brain recall "nginx timeout"</span>       <span class="c"># before you search files</span>
+$ <span class="g">os-brain remember "..." --body "..." --type gotcha</span>
+$ <span class="g">os-brain prefer "commit messages stay lowercase" --why "corrected twice"</span>
+$ <span class="g">os-brain log "deployed 1.4 to the edge box" --kind deploy</span>
+$ <span class="g">os-brain note billing-api "rounding moved to the ledger"</span>  <span class="c"># never write into another project</span></pre>
+    <p>Add <code>--json</code> to any command and you get structured output instead of the text a person reads. For <code>recall</code> this matters: the output carries <code>matched</code> and a script must check it before acting on the results, because a miss returns nothing rather than the whole scope.</p>
+    <p>Flags take one dash or two (<code>-n 5</code> and <code>--n 5</code> are the same) and may come before or after the positional words, so <code>recall foo --json</code> works. The tables below list every flag each command registers, taken from <code>os-brain help &lt;command&gt;</code>. Positional arguments (a subcommand, an id, a query) follow the command name.</p>
+
+    <h2 id="write">Writing <a class="anchor" href="#write">#</a></h2>
+    <p>Three commands put things into the brain. Each one is a single line on purpose: when saving a fact takes effort, nobody saves it.</p>
+    <div class="cmd" id="remember">
+    <h3>remember <span class="muted" style="font-weight:400;font-size:.8em">store a memory (same scope+title updates in place)</span></h3>
+<p>Saves a fact that should last. A memory is identified by its scope plus its title (normalised for case, punctuation and accents), so saving the same title again in the same scope improves that memory instead of adding a copy. Words typed straight after <code>remember</code> are the title.</p>
+<p>Three refusals protect the store. A different body under an existing title is refused unless you say what you mean: <code>--update</code> replaces it (the old version goes to history), <code>--supersedes</code> records that the fact changed. A second memory about the same subject in the same scope is refused with the id already held. And <code>--confidence confirmed</code> is refused unless someone outside this session could check it, because <code>confirmed</code> outranks everything else for good and so takes evidence rather than a self-assessment.</p>
+<pre>$ <span class="g">os-brain remember "nginx terminates TLS on the edge box" --type infra \
+      --body "The edge box runs nginx; the app servers only speak plain HTTP on loopback."</span>
+remembered #1 [global/infra] nginx terminates TLS on the edge box
+
+$ <span class="g">os-brain remember "Invoice rounding happens in the ledger" --type decision \
+      --body "Rounding moved from the API to the ledger so totals match the PDF." --confidence confirmed</span>
+refusing 'confirmed': nothing here can be checked by anyone who was not in this session.
+  'confirmed' outranks everything else forever, so it takes evidence, not a self-assessment.
+  Add --source "&lt;file, command or URL&gt;", --ref "&lt;path:line&gt;", or --source "stated by the user" (the phrase itself, not a source that contains the word); or store it as --confidence reported.</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-duplicate</td><td>Store it even though the brain thinks another memory in this scope is about the same thing. For when that check is wrong.</td></tr>
+      <tr><td>--allow-secret</td><td>Store text the credential scanner flagged. Scanners get it wrong sometimes and this is how you say so.</td></tr>
+      <tr><td>--body &lt;text&gt;</td><td>The fact itself. <code>-</code> reads it from stdin (not over MCP, where stdin is the protocol).</td></tr>
+      <tr><td>--body-file &lt;text&gt;</td><td>Read the body from a file, for anything long enough that shell quoting could break it. Over MCP the file has to be inside the project.</td></tr>
+      <tr><td>--claim-ok</td><td>The body mentions "supersedes #N" only as history. Without it, a body that claims to replace a live memory is refused unless <code>--supersedes</code> names that id, because writing it in the text retires nothing.</td></tr>
+      <tr><td>--confidence &lt;text&gt;</td><td><code>confirmed</code> | <code>reported</code> | <code>assumed</code>. Ranking multiplies by 1.15, 1.0 and 0.8.</td></tr>
+      <tr><td>--date &lt;text&gt;</td><td>When it happened, if you are recording it later.</td></tr>
+      <tr><td>--everywhere</td><td>Refused in os-brain: it stores a memory at the organisation level of the team edition and a local brain has no organisation above it. The refusal says so rather than storing it in this project and calling it global.</td></tr>
+      <tr><td>--fork-ok</td><td>Supersede a memory that another correction already superseded. Without it this is refused, because two current versions of one fact is what superseding exists to prevent.</td></tr>
+      <tr><td>--importance &lt;n&gt;</td><td>1 to 5, 3 neutral. How much is at stake, not how relevant it is. Default <code>3</code>.</td></tr>
+      <tr><td>--no-review</td><td>Store no review date, even for a type that defaults to one.</td></tr>
+      <tr><td>--pin</td><td>Always shown in the brief, whatever its rank.</td></tr>
+      <tr><td>--ref &lt;text&gt;</td><td>Repeatable. A link to another memory, a ticket or a path.</td></tr>
+      <tr><td>--review &lt;text&gt;</td><td>Ask for a re-check on this date. <code>infra</code> and <code>access</code> default to 30 days out.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Where it applies. <code>global</code> means everywhere in this project. Scopes nest on <code>:</code>. Default <code>global</code>.</td></tr>
+      <tr><td>--snooze-until &lt;text&gt;</td><td>Keep it out of the brief until this date.</td></tr>
+      <tr><td>--source &lt;text&gt;</td><td>Where the fact came from: a file, a command, a URL or <code>stated by the user</code>. <code>session</code>, the default, points at nothing.</td></tr>
+      <tr><td>--source-date &lt;text&gt;</td><td>When the source said it, which may differ from when you saved it.</td></tr>
+      <tr><td>--supersedes &lt;n&gt;</td><td>The id this memory replaces. The old one stays in history and a search in its wording returns the new one.</td></tr>
+      <tr><td>--title &lt;text&gt;</td><td>Half of what identifies the memory. Use the words a future session would search for.</td></tr>
+      <tr><td>--trust &lt;text&gt;</td><td><code>stated</code> | <code>imported</code> | <code>external</code>. Whose claim it is. Default <code>stated</code>.</td></tr>
+      <tr><td>--type &lt;text&gt;</td><td>Sets how fast the memory fades (its decay tier). Of all these flags this one matters most. See <a href="concepts.html">concepts</a>. Default <code>note</code>.</td></tr>
+      <tr><td>--update</td><td>Allow replacing the body of an existing memory with the same title.</td></tr>
+      <tr><td>--valid-from &lt;text&gt;</td><td>The date this became true.</td></tr>
+      <tr><td>--valid-to &lt;text&gt;</td><td>The date it stops being true.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="prefer">
+    <h3>prefer <span class="muted" style="font-weight:400;font-size:.8em">store how the user wants to be worked with</span></h3>
+<p>Records how the user wants to be worked with. It is one short command because a preference that takes effort to save never gets saved. <code>--why</code> is the part that matters three months later, when the rule looks arbitrary and nobody remembers what caused it. The prompt hook spots preference language in what the user types and reminds the agent to save it.</p>
+<pre>$ <span class="g">os-brain prefer "answers first, reasoning after" --why "asked twice"</span>
+remembered #5 [global/preference] answers first, reasoning after</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--about &lt;text&gt;</td><td>A person, which makes this a relationship memory rather than a general preference.</td></tr>
+      <tr><td>--confirmed</td><td>They stated it outright; you did not infer it.</td></tr>
+      <tr><td>--importance &lt;n&gt;</td><td>1 to 5, 3 neutral.</td></tr>
+      <tr><td>--pin</td><td>Always shown in the brief.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Where it applies. Default <code>global</code>.</td></tr>
+      <tr><td>--source &lt;text&gt;</td><td>Where it came from.</td></tr>
+      <tr><td>--supersedes &lt;n&gt;</td><td>The id of the preference this one replaces.</td></tr>
+      <tr><td>--update</td><td>Allow replacing an existing preference with the same title.</td></tr>
+      <tr><td>--why &lt;text&gt;</td><td>What prompted it. The part worth keeping.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="log">
+    <h3>log <span class="muted" style="font-weight:400;font-size:.8em">append an activity event</span></h3>
+<p>Adds an entry to the activity log. Log entries are never ranked and never fade. They answer "what did the last session actually do" and the brief reads them for exactly that. Declare kinds with <code>os-brain kind add</code> so <code>map</code> can tell a real kind from a typo.</p>
+<pre>$ <span class="g">os-brain log "deployed 1.4 to staging" --kind deploy</span>
+logged event #1 [deploy] deployed 1.4 to staging</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--actor &lt;text&gt;</td><td>Who did it. Default <code>claude</code>.</td></tr>
+      <tr><td>--allow-secret</td><td>Log text the credential scanner flagged.</td></tr>
+      <tr><td>--date &lt;text&gt;</td><td>The day it happened, when that was not today.</td></tr>
+      <tr><td>--kind &lt;text&gt;</td><td>What sort of event: <code>deploy</code>, <code>incident</code> or whatever this project declared. Default <code>note</code>.</td></tr>
+      <tr><td>--ref &lt;text&gt;</td><td>A link: a commit, a ticket or a path.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Where it happened. Default <code>global</code>.</td></tr>
+      <tr><td>--summary &lt;text&gt;</td><td>The text, when you would rather not pass it positionally.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="read">Reading <a class="anchor" href="#read">#</a></h2>
+    <p>What a session reads. <code>brief</code> and <code>wakeup</code> are the handoff, <code>recall</code> is the search and the rest answer narrower questions.</p>
+    <div class="cmd" id="recall">
+    <h3>recall <span class="muted" style="font-weight:400;font-size:.8em">retrieve ranked memories</span></h3>
+<p>Full-text search first, then the ranking score (relevance, type, confidence, age and use). A superseded memory does not vanish: recall follows the link to its replacement and returns that, so a search in the old wording still finds the current fact. When no memory holds most of the words in the query, the answer is labelled a loose match: leads, not answers.</p>
+<div class="note warn"><strong>A miss returns nothing.</strong> With <code>--json</code>, when nothing matches you get an empty result, not the whole scope. The output carries <code>matched</code> so a script can tell the two apart. It works this way because a script once fed a recall miss into a <code>forget</code> loop and deleted real memories: the warning was in the text output and the script was reading JSON.</div>
+<p>An unknown <code>--type</code> or <code>--tier</code> is an error, never an empty result, so a typo cannot pass for "nothing stored".</p>
+<pre>$ <span class="g">os-brain recall "invoice rounding"</span>
+#2  [global/decision] (score 0.483) Invoice rounding happens in the ledger [confirmed]
+      Rounding moved from the API to the ledger so totals match the PDF.
+      (stated by the user)
+
+$ <span class="g">os-brain recall "kubernetes ingress" --json</span>
+{
+  "count": 0,
+  "matched": false,
+  "query": "kubernetes ingress",
+  "results": [],
+  ...
+}</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--all</td><td>Include the superseded versions too, when you want the history rather than the answer.</td></tr>
+      <tr><td>--all-projects</td><td>Search past this project, in a shared store. Private projects stay out.</td></tr>
+      <tr><td>--browse</td><td>For <code>--json</code>: on a miss, return the scope instead of nothing. The text output already does this.</td></tr>
+      <tr><td>--from &lt;text&gt;</td><td>Saved or changed on or after this date.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many results. Default <code>8</code>.</td></tr>
+      <tr><td>--no-touch</td><td>Do not count this search as a use, so a cleanup sweep does not skew the usage numbers it is checking.</td></tr>
+      <tr><td>--on &lt;text&gt;</td><td>Saved or changed on this one day.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Search from this scope. It sees this scope and every scope it nests in, never the ones inside it.</td></tr>
+      <tr><td>--since &lt;n&gt;</td><td>Saved or changed within this many days.</td></tr>
+      <tr><td>--strict</td><td>Never fall back to the scope, in either output.</td></tr>
+      <tr><td>--tier &lt;text&gt;</td><td><code>A</code> <code>B</code> <code>C</code> <code>D</code> <code>N</code>. Anything else is an error.</td></tr>
+      <tr><td>--to &lt;text&gt;</td><td>Saved or changed on or before this date.</td></tr>
+      <tr><td>--type &lt;text&gt;</td><td>Only one memory type. An unknown type is an error.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="brief">
+    <h3>brief <span class="muted" style="font-weight:400;font-size:.8em">session handoff snapshot</span></h3>
+<p>The handoff a new session reads first: the wall clock and the part of the day, where the brain is, the axioms, how this person wants to be worked with, pinned facts, policies and constraints, what is new since the last brief, measures out of band, open tasks and recent activity. Ask for it whenever you want to know what the project believes right now.</p>
+<pre>$ <span class="g">os-brain brief</span>
+...
+  now       2026-11-20 23:59:38 GMT (Friday night)
+  project   orchard at /home/you/src/orchard
+  brain     LOCAL FILE · /home/you/src/orchard/brain/brain.db
+...
+## HOW THEY WANT TO WORK
+  #5 [preference] answers first, reasoning after
+     asked twice
+
+## PINNED (read first)
+  #1 [infra] [never verified] nginx terminates TLS on the edge box
+     The edge box runs nginx; the app servers only speak plain HTTP on loopback.</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--max-bytes &lt;n&gt;</td><td>Trim from the least important end to fit; 0 keeps everything. <code>brief</code> prints everything unless you set a limit, because you asked for it. <code>OS_BRAIN_MAX_BYTES</code> sets the default.</td></tr>
+      <tr><td>--max-pinned &lt;n&gt;</td><td>Cap on the pinned section. Default <code>15</code>.</td></tr>
+      <tr><td>--max-prefs &lt;n&gt;</td><td>Cap on the preferences section. Default <code>8</code>.</td></tr>
+      <tr><td>--new-for &lt;n&gt;</td><td>Days of "new since you were last here" it always shows. Default <code>1</code>.</td></tr>
+      <tr><td>--new-project-below &lt;n&gt;</td><td>While the brain holds fewer memories than this, show the house standards in full. Default <code>15</code>.</td></tr>
+      <tr><td>--no-axioms</td><td>Leave out the rules that hold in every project.</td></tr>
+      <tr><td>--no-cursor</td><td>Do not move the last-brief marker, so the next real session still sees what is new.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="wakeup">
+    <h3>wakeup <span class="muted" style="font-weight:400;font-size:.8em">session open: the brief, the working tree and this project's own probes</span></h3>
+<p>What the session-start hook runs: the brief, plus the live state of the working tree read from git (staged, modified and untracked files by name, unpushed commits, a merge or rebase left half done), plus any probes this project declared. It goes straight into a session, so it is trimmed to 6000 bytes by default.</p>
+<p>A probe is a shell command the project wants run when a session opens, declared with <code>wakeup add --name --run</code> and managed with <code>rm</code> and <code>list</code>. Probes live in <code>brain.json</code>, which is committed, so a probe list arrives with every clone. That is why a probe only runs after <code>wakeup trust</code>, which a person answers at a terminal after seeing the exact text. It is refused over MCP. Editing a probe revokes its approval. Over HTTP, <code>add</code> and <code>rm</code> are refused too: a remote caller does not get to edit what this machine runs.</p>
+<pre>$ <span class="g">os-brain wakeup add --name tests --run "go test ./... 2&gt;&amp;1 | tail -3"</span>
+$ <span class="g">os-brain wakeup trust</span><span class="c">          # a person, at a terminal, types yes</span>
+$ <span class="g">os-brain wakeup --no-probes</span><span class="c">    # the brief and the tree, nothing run</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--chars &lt;n&gt;</td><td>Probe output kept. Default <code>1200, max 8000</code>.</td></tr>
+      <tr><td>--emit &lt;text&gt;</td><td>Print the envelope a host agent needs instead of plain text: <code>cursor</code>, <code>gemini</code>, <code>codex</code> or <code>hermes</code>. <code>init</code> sets this for you. Without it, plain text.</td></tr>
+      <tr><td>--max-bytes &lt;n&gt;</td><td>Trim from the least important end to fit; 0 for all of it. <code>OS_BRAIN_MAX_BYTES</code> sets the default.</td></tr>
+      <tr><td>--name &lt;text&gt;</td><td>Probe name, for <code>add</code> and <code>rm</code>.</td></tr>
+      <tr><td>--no-brief</td><td>Only the live state, without the brief.</td></tr>
+      <tr><td>--no-cursor</td><td>Do not move the last-brief marker.</td></tr>
+      <tr><td>--no-probes</td><td>Skip this project's declared probes.</td></tr>
+      <tr><td>--no-tree</td><td>Skip the working-tree read.</td></tr>
+      <tr><td>--run &lt;text&gt;</td><td>The shell command the probe runs, for <code>add</code>.</td></tr>
+      <tr><td>--timeout &lt;n&gt;</td><td>Seconds a probe may take. Default <code>10, max 60</code>.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="get">
+    <h3>get <span class="muted" style="font-weight:400;font-size:.8em">show one memory by id</span></h3>
+<p>Shows one memory in full: every metadata field, where it came from and what it supersedes or is superseded by.</p>
+<pre>$ <span class="g">os-brain get 1</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--all-projects</td><td>Read another project's memory (never a private one).</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="open">
+    <h3>open <span class="muted" style="font-weight:400;font-size:.8em">what is outstanding: open tasks, work in flight, what just happened</span></h3>
+<p>What is still outstanding: open tasks, work in flight and what just happened, straight from the brain. It answers "where did we leave off" in a few hundred tokens where working it out from <code>git log</code> costs thousands. <code>outstanding</code> and <code>status</code> are other names for the same command.</p>
+<pre>$ <span class="g">os-brain open --full</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--compact</td><td>The hook's form: shortest extracts.</td></tr>
+      <tr><td>--full</td><td>Task bodies too and longer memory extracts.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many in-flight memories and events. Default <code>6</code>.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="events">
+    <h3>events <span class="muted" style="font-weight:400;font-size:.8em">recent activity</span></h3>
+<p>The activity log, newest first.</p>
+<pre>$ <span class="g">os-brain events --kind deploy --since 7</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--all-projects</td><td>Include other projects in a shared store.</td></tr>
+      <tr><td>--kind &lt;text&gt;</td><td>Only this kind.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many. Default <code>20</code>.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Only this scope.</td></tr>
+      <tr><td>--since &lt;n&gt;</td><td>Within this many days.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="stats">
+    <h3>stats <span class="muted" style="font-weight:400;font-size:.8em">counts</span></h3>
+<p>Counts. Its second line is the database file it actually opened. Check that path before you trust a count: a project on the shared store and a project on its own file look the same until you do.</p>
+<pre>$ <span class="g">os-brain stats</span>
+memories=4 (pinned 1, superseded 0) [A1 B2 C1] scopes=1 events=2 leads=0 measures=1/1 keys
+db=/home/you/src/orchard/brain/brain.db</pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+    <div class="cmd" id="map">
+    <h3>map <span class="muted" style="font-weight:400;font-size:.8em">index of scopes, types, event kinds and pinned memories</span></h3>
+<p>Lists the scopes, types, event kinds and pinned memories, comparing what <code>brain.json</code> declares with what is actually stored. A scope somebody created with a typo shows up here.</p>
+<pre>$ <span class="g">os-brain map --top 5</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--top &lt;n&gt;</td><td>Top memories to show per scope. Default <code>3</code>.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="coverage">
+    <h3>coverage <span class="muted" style="font-weight:400;font-size:.8em">what this project knows about, by category</span></h3>
+<p>What this project knows about, by category. After a search that found nothing, <code>--near</code> shows what <em>is</em> stored close to it.</p>
+<pre>$ <span class="g">os-brain coverage --near "certificate renewal"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--near &lt;text&gt;</td><td>What is held near this, for a search that found nothing.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="env">
+    <h3>env <span class="muted" style="font-weight:400;font-size:.8em">date, time, paths, git and project context</span></h3>
+<p>The date, the time, every path it resolved and the git and project context. Run it first when something is not where you expected.</p>
+<pre>$ <span class="g">os-brain env</span></pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+
+    <h2 id="correct">Correcting <a class="anchor" href="#correct">#</a></h2>
+    <p>A fact that was wrong, or stopped being true, is corrected in place rather than deleted. The old version stays in history so a mistake can always be traced.</p>
+    <div class="cmd" id="update">
+    <h3>update <span class="muted" style="font-weight:400;font-size:.8em">edit a memory</span></h3>
+<p>For the same fact in better words. It takes most of what <code>remember</code> takes. <code>--trust</code>, <code>--valid-from</code>, <code>--valid-to</code>, <code>--supersedes</code> and <code>--allow-duplicate</code> are set when a memory is first written and cannot be changed later. When the fact itself changed, use <code>remember --supersedes</code> instead, so a search in the old wording lands on the new fact.</p>
+<pre>$ <span class="g">os-brain update 2 --body ""</span>
+refusing to blank the body of #2 ('Invoice rounding happens in the ledger'), which holds 74 characters.
+An empty --body is usually a command that failed to produce the text it meant to pass.
+If you do mean to empty it, pass --force. To retire the fact instead, forget it or supersede it with the memory that replaces it</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-secret</td><td>Store text the credential scanner flagged.</td></tr>
+      <tr><td>--body &lt;text&gt;</td><td>The new body.</td></tr>
+      <tr><td>--body-file &lt;text&gt;</td><td>Read the new body from a file.</td></tr>
+      <tr><td>--confidence &lt;text&gt;</td><td><code>confirmed</code> | <code>reported</code> | <code>assumed</code>, with the same evidence rule as <code>remember</code>.</td></tr>
+      <tr><td>--date &lt;text&gt;</td><td>When it happened.</td></tr>
+      <tr><td>--force</td><td>Allow <code>--body ""</code> to empty a body that is not empty.</td></tr>
+      <tr><td>--importance &lt;n&gt;</td><td>1 to 5.</td></tr>
+      <tr><td>--no-review</td><td>Clear this memory's review date.</td></tr>
+      <tr><td>--pin</td><td>Always show it in the brief.</td></tr>
+      <tr><td>--ref &lt;text&gt;</td><td>Repeatable. A link to another memory, a ticket or a path.</td></tr>
+      <tr><td>--review &lt;text&gt;</td><td>Ask for a re-check on this date.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Refile into another scope.</td></tr>
+      <tr><td>--snooze-until &lt;text&gt;</td><td>Keep it out of the brief until this date.</td></tr>
+      <tr><td>--source &lt;text&gt;</td><td>Where it came from.</td></tr>
+      <tr><td>--source-date &lt;text&gt;</td><td>When the source said it.</td></tr>
+      <tr><td>--title &lt;text&gt;</td><td>A new title.</td></tr>
+      <tr><td>--type &lt;text&gt;</td><td>A new type, which changes how it decays.</td></tr>
+      <tr><td>--unpin</td><td>Stop always showing it in the brief.</td></tr>
+      <tr><td>--unsupersede</td><td>Clear this memory's superseded_by link, leaving both standing.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="verify">
+    <h3>verify <span class="muted" style="font-weight:400;font-size:.8em">mark a memory re-checked today</span></h3>
+<p>Marks a memory re-checked today and can raise <code>--confidence</code> when you give a <code>--source</code>. That is what stops <code>review --stale-days</code> flagging it.</p>
+<pre>$ <span class="g">os-brain verify 1 --source "nginx -v on the edge box"</span>
+verified #1 at 2026-11-21 00:03</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--confidence &lt;text&gt;</td><td>Raise or lower it while you are at it.</td></tr>
+      <tr><td>--source &lt;text&gt;</td><td>What you checked it against.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="history">
+    <h3>history <span class="muted" style="font-weight:400;font-size:.8em">archived versions of memories</span></h3>
+<p>Archived versions of memories: every update, forget and supersede leaves one.</p>
+<pre>$ <span class="g">os-brain history --id 3</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--id &lt;n&gt;</td><td>Only this memory's archived versions.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many versions to show. Default <code>20</code>.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="restore">
+    <h3>restore <span class="muted" style="font-weight:400;font-size:.8em">bring back an archived version</span></h3>
+<p>Brings an archived version back by its history id. Over a memory that is still current it needs <code>--force</code>, because rolling a live fact back is a different act from undoing a delete.</p>
+<pre>$ <span class="g">os-brain restore 7</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--force</td><td>Roll a live memory back to the archived version.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="promote">
+    <h3>promote <span class="muted" style="font-weight:400;font-size:.8em">move a memory up to a wider scope</span></h3>
+<p>Moves a memory up to a wider scope, when it turns out to apply beyond where it was saved.</p>
+<pre>$ <span class="g">os-brain promote 12 --to channel</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--to &lt;text&gt;</td><td>Destination scope. Default <code>global</code>.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="tasks">Tasks and measures <a class="anchor" href="#tasks">#</a></h2>
+    <p>Neither one is a memory and we keep them apart on purpose: a task is something owed by a date and a measure is a number that only means something as a series. <a href="tasks.html">Tasks has its own page.</a></p>
+    <div class="cmd" id="task">
+    <h3>task <span class="muted" style="font-weight:400;font-size:.8em">what is owed, by whom and when: reminders, recurrence, an ordered list</span></h3>
+<p>What is owed, by whom and when. With no subcommand it lists the open tasks. The subcommands are <code>add</code>, <code>list</code>, <code>due</code>, <code>done</code>, <code>drop</code>, <code>wait</code>, <code>reopen</code>, <code>snooze</code>, <code>set</code> and <code>todo</code>. A flag the subcommand does not read is refused rather than ignored. A task is delivered when a session is open and somebody is typing: nothing here wakes a machine or acts unattended.</p>
+<pre>$ <span class="g">os-brain task add "renew the edge certificate" --when "every monday 9am"</span>
+task #1 [user] renew the edge certificate
+  due 2026-11-23 09:00 (every mon at 09:00)
+
+$ <span class="g">os-brain task list</span>
+[ ] #1   renew the edge certificate  (due 2026-11-23 09:00 · every mon at 09:00)
+
+$ <span class="g">os-brain task snooze 1 --until "in 2 hours"</span>
+$ <span class="g">os-brain task done 1</span>
+$ <span class="g">os-brain task todo --out TODO.md</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--all</td><td>Closed ones too.</td></tr>
+      <tr><td>--allow-outside</td><td>With todo: write outside the project.</td></tr>
+      <tr><td>--allow-secret</td><td>Store it anyway; it is a false positive.</td></tr>
+      <tr><td>--allow-tracked</td><td>With todo: write to a git-tracked path.</td></tr>
+      <tr><td>--body &lt;text&gt;</td><td>With <code>add</code> or <code>set</code>: the detail.</td></tr>
+      <tr><td>--notify</td><td>With <code>add</code> or <code>set</code>: mark the task for notification. The flag is stored and exported with the task.</td></tr>
+      <tr><td>--out &lt;text&gt;</td><td>With todo: where to write it.</td></tr>
+      <tr><td>--owner &lt;text&gt;</td><td><code>user</code> | <code>agent</code>: who owes it.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>With <code>add</code> or <code>set</code>: where it belongs.</td></tr>
+      <tr><td>--state &lt;text&gt;</td><td>With <code>list</code>: <code>open</code> | <code>waiting</code> | <code>done</code> | <code>dropped</code>.</td></tr>
+      <tr><td>--title &lt;text&gt;</td><td>With set: the new title; with add: instead of the words.</td></tr>
+      <tr><td>--until &lt;text&gt;</td><td>Snooze this occurrence until.</td></tr>
+      <tr><td>--when &lt;text&gt;</td><td>"in 3 hours", "tomorrow 9am", "every monday 9am", "daily 17:00"; with set, "none" clears it.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="measure">
+    <h3>measure <span class="muted" style="font-weight:400;font-size:.8em">numbers that only mean something as a series</span></h3>
+<p>Numbers that only mean something as a series. The subcommands are <code>add</code>, <code>series</code>, <code>list</code>, <code>limit</code>, <code>forget &lt;id&gt;</code> and <code>relabel &lt;id&gt;</code>, which changes a reading's unit and never touches its value. A band declared with <code>limit</code> makes the brief flag a reading outside it.</p>
+<pre>$ <span class="g">os-brain measure add latency_p95 182 --unit ms</span>
+#1 latency_p95 = 182 ms on 2026-11-20
+
+$ <span class="g">os-brain measure limit latency_p95 --high 250 --better down --why "slo"</span>
+band for latency_p95: low= high=250 better=down
+
+$ <span class="g">os-brain measure series latency_p95 --from 2026-11-01</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-secret</td><td>Store it anyway; it is a false positive.</td></tr>
+      <tr><td>--better &lt;text&gt;</td><td>With <code>limit</code>: <code>up</code> | <code>down</code>, which direction is good.</td></tr>
+      <tr><td>--confidence &lt;text&gt;</td><td><code>confirmed</code> | <code>reported</code> | <code>assumed</code>.</td></tr>
+      <tr><td>--date &lt;text&gt;</td><td>When it was taken.</td></tr>
+      <tr><td>--from &lt;text&gt;</td><td>With <code>series</code>: start date.</td></tr>
+      <tr><td>--high &lt;n&gt;</td><td>Band ceiling.</td></tr>
+      <tr><td>--label &lt;text&gt;</td><td>A human name for the key.</td></tr>
+      <tr><td>--low &lt;n&gt;</td><td>Band floor.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>With <code>series</code>: how many readings.</td></tr>
+      <tr><td>--note &lt;text&gt;</td><td>A note on this reading.</td></tr>
+      <tr><td>--ref &lt;text&gt;</td><td>A link: a dashboard, a run, a path.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Where it belongs.</td></tr>
+      <tr><td>--source &lt;text&gt;</td><td>Where the reading came from. Default <code>session</code>.</td></tr>
+      <tr><td>--to &lt;text&gt;</td><td>With <code>series</code>: end date.</td></tr>
+      <tr><td>--unit &lt;text&gt;</td><td>The unit: <code>ms</code>, <code>%</code>, <code>EUR</code>.</td></tr>
+      <tr><td>--why &lt;text&gt;</td><td>With <code>limit</code>: why the band is where it is.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="hygiene">Keeping it healthy <a class="anchor" href="#hygiene">#</a></h2>
+    <p>An old fact looks exactly like a current one. That is the biggest risk with any memory and these four commands are how you catch it.</p>
+    <div class="cmd" id="review">
+    <h3>review <span class="muted" style="font-weight:400;font-size:.8em">hygiene report: duplicates, decay, promotions</span></h3>
+<p>The hygiene report: duplicates, memories past their decay, memories worth promoting and tier A or B facts nobody has re-checked in <code>--stale-days</code>. The duplicate scan compares memories in pairs, so it is capped. It finishes with what this brain has never used at all, such as no event logged or no summary in the shared index.</p>
+<pre>$ <span class="g">os-brain review --stale-days 90</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--duplicates</td><td>Run the pairwise scan anyway.</td></tr>
+      <tr><td>--max-pairwise &lt;n&gt;</td><td>Skip the pairwise duplicate scan when it would compare more memories than this. Default <code>600</code>.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many items per section. Default <code>8</code>.</td></tr>
+      <tr><td>--stale-days &lt;n&gt;</td><td>Tier A/B unverified for this long is flagged. Default <code>180</code>.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="doctor">
+    <h3>doctor <span class="muted" style="font-weight:400;font-size:.8em">check the brain for inconsistency</span></h3>
+<p>Checks the brain for inconsistency: dangling links, supersede cycles, index drift and series that mix units. <code>--fix</code> repairs what can be repaired and names the rest.</p>
+<pre>$ <span class="g">os-brain doctor</span>
+...
+4 live memories for orchard · 4 rows including superseded · schema v16 · /home/you/src/orchard/brain/brain.db
+
+no problems found</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--fix</td><td>Repair the repairable problems.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="reindex">
+    <h3>reindex <span class="muted" style="font-weight:400;font-size:.8em">rebuild the FTS index from the memories table</span></h3>
+<p>Rebuilds the full-text index from the memories table, when <code>doctor</code> reports drift.</p>
+<pre>$ <span class="g">os-brain reindex</span></pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+    <div class="cmd" id="vacuum">
+    <h3>vacuum <span class="muted" style="font-weight:400;font-size:.8em">checkpoint the WAL and compact the database</span></h3>
+<p>Checkpoints the write-ahead log and compacts the database file.</p>
+<pre>$ <span class="g">os-brain vacuum</span></pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+
+    <h2 id="deleting">Deleting <a class="anchor" href="#deleting">#</a></h2>
+    <p>Agents drive the brain and an agent that typed a delete is not asked whether it is sure. If you typed it, you meant it. A guard flag is still needed in a few cases and each one catches an accident rather than a decision:</p>
+<ul>
+  <li><code>update --body ""</code> on a body that has text needs <code>--force</code>. A failed shell substitution produces an empty string that once wiped a runbook while reporting success.</li>
+  <li><code>forget</code> of a pinned memory, a guardrail or the current version of a correction needs <code>--force</code>. A wrong id would hit exactly what the brief opens with.</li>
+  <li><code>restore</code> over a memory that is still current needs <code>--force</code>.</li>
+  <li><code>import</code> of a dump that brings guardrails, or retracts a pinned memory or a guardrail, needs <code>--force</code>. A dump is a file somebody handed you; the dry run lists what it would do.</li>
+  <li>The big deletions (<code>forget --all</code>, pruning tier A or B, anything across <code>--all-projects</code>) need <code>--i-mean-it</code>.</li>
+</ul>
+<p>What they have in common: when the tool cannot tell what you meant, it does nothing and says so. It never does the biggest thing it could.</p>
+    <div class="cmd" id="forget">
+    <h3>forget <span class="muted" style="font-weight:400;font-size:.8em">delete a memory (leaves a tombstone)</span></h3>
+<p>Deletes one memory and leaves a tombstone so the same fact is not learned again as new. It archives first (so <code>restore</code> can undo it) and records <code>--reason</code>. Without <code>--force</code> it refuses a pinned memory, a guardrail and a memory that supersedes others, because deleting that last one would put the facts it retracted back into search results.</p>
+<p><code>--purge</code> is for something that should never have been saved: no version is kept, every version already stored is deleted and nothing can bring it back. Typing it is the decision, so it includes <code>--force</code>. The tombstone stays, title only.</p>
+<p><code>forget --all</code> empties this project, pinned memories included. It is a dry run unless you add <code>--apply</code> and then <code>--i-mean-it</code> on top. It writes a dump of this project first. In a shared store it deletes this project's rows and nobody else's.</p>
+<pre>$ <span class="g">os-brain forget 1</span>
+#1 is pinned: 'nginx terminates TLS on the edge box'
+Load-bearing memories are not deleted by accident. Re-read it (os-brain get 1), then use --force, or supersede it instead.
+
+$ <span class="g">os-brain forget 4</span>
+#4 is the current version of 1 superseded memory. Deleting it would put these back into recall as live facts:
+  #3 Rounding of invoices is done by the ledger
+Supersede it with a correct version instead, or pass --force to accept the resurrection.
+
+$ <span class="g">os-brain forget --all</span>
+...
+would delete:
+  memories         4
+...
+4 rows. Nothing has been changed. Add --apply --i-mean-it to do it.</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--all</td><td>Every memory in this project, pinned included.</td></tr>
+      <tr><td>--allow-outside</td><td>Write the dump outside the project.</td></tr>
+      <tr><td>--allow-tracked</td><td>Write the dump to a git-tracked path.</td></tr>
+      <tr><td>--apply</td><td>With --all: actually do it (default: report the plan).</td></tr>
+      <tr><td>--backup &lt;text&gt;</td><td>With --all: where to write the dump taken first.</td></tr>
+      <tr><td>--everything</td><td>--all plus activity, measures, leads and history.</td></tr>
+      <tr><td>--force</td><td>Delete a pinned memory, a guardrail or the current version of a correction.</td></tr>
+      <tr><td>--i-mean-it</td><td>With --all --apply: confirm the wipe.</td></tr>
+      <tr><td>--purge</td><td>Destroy it: no archived version kept, every one already held deleted, nothing can restore it.</td></tr>
+      <tr><td>--reason &lt;text&gt;</td><td>Why, recorded with the tombstone.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="prune">
+    <h3>prune <span class="muted" style="font-weight:400;font-size:.8em">delete decayed or superseded memories (dry run by default)</span></h3>
+<p>Removes decayed and superseded memories. You say which with <code>--tier</code> or <code>--superseded</code>; with neither it refuses. It is a dry run unless you add <code>--apply</code>. It refuses tier A or B without <code>--i-mean-it</code> (those never decay, so pruning them deletes the load-bearing part of the brain), keeps any memory that supersedes another, refuses more than 25 deletions or half the brain without <code>--yes</code> and dumps the brain before deleting anything.</p>
+<pre>$ <span class="g">os-brain prune</span>
+say what to prune: --tier D (decayed ephemera) or --superseded
+
+$ <span class="g">os-brain prune --tier A --older-than 1</span>
+tier A never decays: access, gotcha, incident, infra. Pruning it deletes the load-bearing part of the brain. Pass --i-mean-it if that is really the intent.
+
+$ <span class="g">os-brain prune --tier D --apply</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--all-projects</td><td>Every project in a shared store. Needs <code>--i-mean-it</code>.</td></tr>
+      <tr><td>--allow-outside</td><td>Write the dump outside the project.</td></tr>
+      <tr><td>--allow-tracked</td><td>Write the dump to a git-tracked path.</td></tr>
+      <tr><td>--apply</td><td>Actually delete (dry run without it).</td></tr>
+      <tr><td>--backup &lt;text&gt;</td><td>Where to dump before deleting.</td></tr>
+      <tr><td>--force</td><td>Overwrite a --backup file this tool did not generate.</td></tr>
+      <tr><td>--i-mean-it</td><td>Required for tier A/B and --all-projects.</td></tr>
+      <tr><td>--max-delete &lt;n&gt;</td><td>Refuse a run that would delete more than this many without <code>--yes</code>. Default <code>25</code>.</td></tr>
+      <tr><td>--older-than &lt;n&gt;</td><td>Only memories older than this many days. Default <code>30</code>.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Only this scope.</td></tr>
+      <tr><td>--superseded</td><td>Prune retracted memories.</td></tr>
+      <tr><td>--tier &lt;text&gt;</td><td><code>A</code> <code>B</code> <code>C</code> <code>D</code>. A and B need <code>--i-mean-it</code>.</td></tr>
+      <tr><td>--yes</td><td>Accept a large deletion.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="data">Export, import, backup and snapshot <a class="anchor" href="#data">#</a></h2>
+    <p>Export carries everything, so you are never locked in. A snapshot is generated, never written by hand: keep a hand-written memory file next to a brain and sooner or later the two disagree without telling you.</p>
+<p>Every command that writes a file follows the same rules. That means <code>export --out</code>, <code>snapshot --out</code>, <code>backup --out</code>, <code>task todo --out</code> and the dumps that <code>prune</code>, <code>forget --all</code> and <code>uninstall</code> take before deleting. They refuse to overwrite a file that lacks their own generated-by marker, refuse a path inside a git repository that is not gitignored, refuse a path outside the project, refuse to write through a symbolic link and write with mode 600. <code>--force</code>, <code>--allow-tracked</code> and <code>--allow-outside</code> each lift exactly one of those. Nothing lifts the symbolic link rule, because a link committed in a repository can point at any file you own.</p>
+<pre>$ <span class="g">os-brain export --out dumps/e.json</span>
+dumps/e.json is inside a git repository and is not gitignored.
+A snapshot is every memory in cleartext.
+  gitignore it, then re-run   no flag needed, and the usual answer
+  a path outside the project  needs --allow-outside
+  commit it deliberately      needs --allow-tracked</pre>
+    <div class="cmd" id="export">
+    <h3>export <span class="muted" style="font-weight:400;font-size:.8em">dump the whole brain as JSON (take one before pruning)</span></h3>
+<p>The whole brain as JSON: memories with their provenance and links, events, leads, tasks and measures. Take one before pruning. Without <code>--out</code> it prints to stdout.</p>
+<pre>$ <span class="g">os-brain export --out dumps/orchard.json</span>
+exported 4 memories, 2 events, 0 leads to dumps/orchard.json</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-outside</td><td>Write outside the project.</td></tr>
+      <tr><td>--allow-tracked</td><td>Write to a path git would track.</td></tr>
+      <tr><td>--force</td><td>Overwrite a file this command did not generate.</td></tr>
+      <tr><td>--out &lt;text&gt;</td><td>Write here instead of stdout.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="import">
+    <h3>import <span class="muted" style="font-weight:400;font-size:.8em">merge a JSON export into this brain</span></h3>
+<p>Merges a JSON export into this brain. Every row is checked before anything is written, so one bad row refuses the whole dump instead of leaving it half imported. A dump is untrusted input like anything else from outside: everything imported is marked <code>trust: imported</code>, arrives unpinned, is <code>confirmed</code> only with a citation, never lands in a private project and every text field goes through the secret scan. Axioms, standards, lessons and notes belong to the whole machine and are never imported. <code>--dry-run</code> reports first.</p>
+<pre>$ <span class="g">os-brain import dumps/orchard.json --dry-run</span>
+would add 0 memories, skip 4 already present</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--all-projects</td><td>Restore a whole multi-project store.</td></tr>
+      <tr><td>--allow-secret</td><td>Import text the credential scanner flagged.</td></tr>
+      <tr><td>--dry-run</td><td>Report what would change, write nothing.</td></tr>
+      <tr><td>--events</td><td>Also import the events.</td></tr>
+      <tr><td>--force</td><td>Accept guardrails from the dump and let it retract a pinned memory or a guardrail.</td></tr>
+      <tr><td>--i-mean-it</td><td>With --all-projects: write rows under another project's label.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="backup">
+    <h3>backup <span class="muted" style="font-weight:400;font-size:.8em">timestamped full dump, every table enumerated from the schema</span></h3>
+<p>A timestamped full dump, every table enumerated from the schema so a new table is never left out. Safety copies are separate: one is made at session open, at most every 24 hours, under <code>~/.claude/os-brain/backups/</code>. <code>--auto</code> is what the hook runs. <code>--list</code> shows them and <code>--verify</code> opens each one to prove it reads.</p>
+<p><code>--restore &lt;file&gt;</code> puts a safety copy back and is a dry run until <code>--apply</code>. It checks the copy before installing it, swaps the file in with a single rename and refuses while another session has the store open. In a shared store a backup covers only this project; <code>--whole-store</code> takes every project and is refused over MCP.</p>
+<pre>$ <span class="g">os-brain backup</span>
+backed up to /home/you/src/orchard/brain/brain-backup-20261121-000043.json (mode 600)
+  events 2 · measure_limits 1 · measures 1 · history 1 · memories 4 · session_log 1 · tasks 1 · tombstones 1
+
+$ <span class="g">os-brain backup --list --verify</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-outside</td><td>Write outside the project.</td></tr>
+      <tr><td>--allow-tracked</td><td>Write to a git-tracked path.</td></tr>
+      <tr><td>--apply</td><td>With --restore: actually do it.</td></tr>
+      <tr><td>--auto</td><td>Make a safety copy if one is due (what the hook runs).</td></tr>
+      <tr><td>--force</td><td>Overwrite a file this tool did not generate.</td></tr>
+      <tr><td>--list</td><td>The safety copies for this store, newest first.</td></tr>
+      <tr><td>--out &lt;text&gt;</td><td>Write the dump here.</td></tr>
+      <tr><td>--restore &lt;text&gt;</td><td>Restore the store from this safety copy.</td></tr>
+      <tr><td>--verify</td><td>Open the safety copies and prove they read.</td></tr>
+      <tr><td>--whole-store</td><td>Every project in a shared store, not just this one (a person at a terminal).</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="snapshot">
+    <h3>snapshot <span class="muted" style="font-weight:400;font-size:.8em">generated markdown mirror of the brain</span></h3>
+<p>A generated markdown mirror of the brain, stamped as generated so nobody edits it by hand. Without <code>--out</code> it prints to stdout.</p>
+<pre>$ <span class="g">os-brain snapshot --out dumps/MEMORY.md</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-outside</td><td>Write outside the project.</td></tr>
+      <tr><td>--allow-tracked</td><td>Write to a path git would track.</td></tr>
+      <tr><td>--force</td><td>Overwrite a file this command did not generate.</td></tr>
+      <tr><td>--out &lt;text&gt;</td><td>Write here instead of stdout.</td></tr>
+      <tr><td>--per-scope &lt;n&gt;</td><td>Cap on memories per scope. Default <code>25</code>.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="store">Where the memories live <a class="anchor" href="#store">#</a></h2>
+    <p>Each project keeps its memories in its own <code>brain/brain.db</code> unless it moves into the shared store at <code>~/.claude/os-brain/brain.db</code>. <a href="sharing.html">Sharing has its own page.</a></p>
+    <div class="cmd" id="share">
+    <h3>share <span class="muted" style="font-weight:400;font-size:.8em">move this project into the shared store, or back out (dry run by default)</span></h3>
+<p>Moves this project into the shared store, or back out to its own file with <code>--off</code>. It is a dry run until <code>--apply</code> and keeps the old file aside.</p>
+<pre>$ <span class="g">os-brain share</span><span class="c">                  # what would move</span>
+$ <span class="g">os-brain share --apply</span><span class="c">          # into the shared store</span>
+$ <span class="g">os-brain share --off --apply</span><span class="c">    # back to a file of its own</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--apply</td><td>Do it (without this, it reports and stops).</td></tr>
+      <tr><td>--off</td><td>Move back out to this project's own database.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="private">
+    <h3>private <span class="muted" style="font-weight:400;font-size:.8em">keep this project's memories out of other projects' --all-projects</span></h3>
+<p>Keeps this project's memories out of every other project's <code>--all-projects</code> search, in a shared store. <code>--off --yes</code> makes them readable again, retroactively, which is why it needs the second flag.</p>
+<pre>$ <span class="g">os-brain private</span>
+$ <span class="g">os-brain private --off --yes</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--off</td><td>Make it readable by the other projects again.</td></tr>
+      <tr><td>--yes</td><td>With --off: expose every memory, including the private ones.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="absorb">
+    <h3>absorb <span class="muted" style="font-weight:400;font-size:.8em">pull a standalone brain.db in as a project</span></h3>
+<p>Pulls a standalone <code>brain.db</code> in as a project, for example when a project that had its own file joins a shared store.</p>
+<pre>$ <span class="g">os-brain absorb ../old-checkout/brain/brain.db --dry-run</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-secret</td><td>Store it anyway; it is a false positive.</td></tr>
+      <tr><td>--dry-run</td><td>Report what would move, write nothing.</td></tr>
+      <tr><td>--force-label</td><td>Accept a label mismatch.</td></tr>
+      <tr><td>--i-mean-it</td><td>With --project naming another project: file the rows there.</td></tr>
+      <tr><td>--no-events</td><td>Leave the activity log behind.</td></tr>
+      <tr><td>--project &lt;text&gt;</td><td>File the rows under this project.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="relabel">
+    <h3>relabel <span class="muted" style="font-weight:400;font-size:.8em">claim rows filed under another label as this project</span></h3>
+<p>Claims rows filed under another project label as this project, after a rename or when memories were written under the wrong name. Dry run until <code>--apply</code>. <code>--claim</code> binds this project's name to this directory after a move; it is a person's act, refused over MCP and missing from the MCP schema altogether.</p>
+<pre>$ <span class="g">os-brain relabel old-name --expect 41 --apply</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--apply</td><td>Actually move the rows.</td></tr>
+      <tr><td>--claim</td><td>Bind this project's name to this directory, after a move (a person at a terminal).</td></tr>
+      <tr><td>--expect &lt;n&gt;</td><td>How many memories you expect to move.</td></tr>
+      <tr><td>--i-mean-it</td><td>The label is not in the index and they are yours.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="context">
+    <h3>context <span class="muted" style="font-weight:400;font-size:.8em">project facts injected into every brief</span></h3>
+<p>Project facts injected into every brief, kept in <code>brain.json</code>: <code>context set &lt;key&gt; &lt;value&gt;</code>, <code>context rm &lt;key&gt;</code> and <code>context list</code>.</p>
+<pre>$ <span class="g">os-brain context set deploy "tag a release, CI ships it"</span></pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+    <div class="cmd" id="scope">
+    <h3>scope <span class="muted" style="font-weight:400;font-size:.8em">declare scopes in brain.json</span></h3>
+<p>Declares a scope in <code>brain.json</code> so <code>map</code> can tell a real scope from a typo: <code>scope add &lt;name&gt; --desc</code>, <code>scope rm</code>, <code>scope list</code>.</p>
+<pre>$ <span class="g">os-brain scope add channel:deploy --desc "how releases go out"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--desc &lt;text&gt;</td><td>What it is for.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="kind">
+    <h3>kind <span class="muted" style="font-weight:400;font-size:.8em">declare event kinds in brain.json</span></h3>
+<p>The same for event kinds: <code>kind add &lt;name&gt; --desc</code>, <code>kind rm</code>, <code>kind list</code>.</p>
+<pre>$ <span class="g">os-brain kind add deploy --desc "a release went out"</span>
+declared kind 'deploy'</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--desc &lt;text&gt;</td><td>What it is for.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="cross">Across projects <a class="anchor" href="#cross">#</a></h2>
+    <p>These live in the shared store that every project on the machine reads. <b>Nothing that arrives through them has any authority.</b> A note is information. Only the person at the keyboard gives orders.</p>
+    <div class="cmd" id="axiom">
+    <h3>axiom <span class="muted" style="font-weight:400;font-size:.8em">rules that hold in every project</span></h3>
+<p>Rules that hold in every project on the machine: <code>list</code>, <code>add</code>, <code>edit --id</code>, <code>rm --id</code>. os-brain ships a set of default axioms; <a href="axioms.html">the axioms page</a> lists them with what each one prevents. <b>No agent can add, edit or remove an axiom, even when a human asks it to.</b> Changing one is refused over MCP, refused from a process running under an agent's session and, at a terminal, shows the change and waits for "yes". An axiom is read as a house rule by every project, so it is a person's decision.</p>
+<pre>$ <span class="g">os-brain axiom list</span>
+$ <span class="g">os-brain axiom add "Never push to main" --why "main deploys on push"</span><span class="c">   # a person, at a terminal</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--id &lt;n&gt;</td><td>Which axiom, for <code>edit</code> and <code>rm</code>.</td></tr>
+      <tr><td>--why &lt;text&gt;</td><td>What it prevents.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="standard">
+    <h3>standard <span class="muted" style="font-weight:400;font-size:.8em">house defaults every new project inherits</span></h3>
+<p>House defaults every new project starts with: <code>list</code>, <code>add</code>, <code>rm --id</code>, under the same terminal rule as <code>axiom</code>.</p>
+<pre>$ <span class="g">os-brain standard add "Go for new services" --category stack --why "one static binary"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--category &lt;text&gt;</td><td>Files it: <code>stack</code>, <code>security</code>, <code>deploy</code> or any word you choose. Default <code>general</code>.</td></tr>
+      <tr><td>--from &lt;n&gt;</td><td>Lift the text from a memory.</td></tr>
+      <tr><td>--id &lt;n&gt;</td><td>Which standard, for <code>rm</code>.</td></tr>
+      <tr><td>--why &lt;text&gt;</td><td>What it is for.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="note">
+    <h3>note <span class="muted" style="font-weight:400;font-size:.8em">leave a note for another project, or read yours</span></h3>
+<p>Leaves a note for another project with <code>note &lt;project&gt; "..."</code>, or reads yours. A project name this machine has never seen is refused, so a note never goes nowhere. A note waits for the next session in that project; <code>dm</code> reaches a session that is already running.</p>
+<pre>$ <span class="g">os-brain note billing-api "rounding moved to the ledger"</span>
+$ <span class="g">os-brain note --inbox</span>
+$ <span class="g">os-brain note --ack 3</span>
+
+$ <span class="g">os-brain note nosuchproject "hello"</span>
+no project called 'nosuchproject' has ever opened this brain, so the note would reach nobody and it has NOT been sent. ...</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--ack &lt;n&gt;</td><td>Done with it.</td></tr>
+      <tr><td>--allow-secret</td><td>Store it anyway; it is a false positive.</td></tr>
+      <tr><td>--elsewhere</td><td>Refused in os-brain: it reads other organisations' mailboxes on the team edition and a local brain has none.</td></tr>
+      <tr><td>--expires &lt;n&gt;</td><td>Days until it drops out of their brief.</td></tr>
+      <tr><td>--inbox</td><td>List the notes waiting for this project.</td></tr>
+      <tr><td>--kind &lt;text&gt;</td><td><code>note</code> | <code>prompt</code>. Default <code>note</code>.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many notes to list. Default <code>10</code>.</td></tr>
+      <tr><td>--read &lt;n&gt;</td><td>Read one in full.</td></tr>
+      <tr><td>--ref &lt;text&gt;</td><td>A link to go with the note: a memory, a commit, a path.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="sessions">
+    <h3>sessions <span class="muted" style="font-weight:400;font-size:.8em">the running Claude Code sessions this brain can reach</span></h3>
+<p>The running agent sessions this brain can reach, with whose each one is, which project and machine and whether it is listening.</p>
+<pre>$ <span class="g">os-brain sessions</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--all</td><td>Include sessions that have ended.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="dm">
+    <h3>dm <span class="muted" style="font-weight:400;font-size:.8em">send a direct message to one running session ("-" reads the body from stdin)</span></h3>
+<p>Sends a direct message to one running session: <code>dm &lt;session|project|project/prefix&gt; "..."</code>. It is read on the session's next prompt, tool call or turn end, or at once if the session listens on the channel. When a project has several live sessions you have to pick one. <code>--rdo</code> sends an instruction rather than a message; the recipient lets it through with <code>--accept</code> at a terminal (never over MCP, since it releases another person's instruction into the session) or refuses it with <code>--reject</code>.</p>
+<pre>$ <span class="g">os-brain dm orchard "the staging deploy is mine for the next hour"</span>
+$ <span class="g">os-brain dm --mute</span>
+$ <span class="g">os-brain dm --inbox</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--accept &lt;n&gt;</td><td>Release a pending remote-do addressed to you, by id.</td></tr>
+      <tr><td>--allow-secret</td><td>Send it anyway; it is a false positive.</td></tr>
+      <tr><td>--everywhere</td><td>With --mute/--unmute: you, on every session.</td></tr>
+      <tr><td>--inbox</td><td>What do-not-disturb held back.</td></tr>
+      <tr><td>--mute</td><td>Do-not-disturb: hold plain messages for the inbox.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many to list. Default <code>10</code>.</td></tr>
+      <tr><td>--rdo</td><td>A remote-do (an instruction), not a plain message.</td></tr>
+      <tr><td>--reject &lt;n&gt;</td><td>Refuse a pending remote-do addressed to you, by id.</td></tr>
+      <tr><td>--sent</td><td>What this project sent and whether each one was read.</td></tr>
+      <tr><td>--unmute</td><td>Turn do-not-disturb off.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="publish">
+    <h3>publish <span class="muted" style="font-weight:400;font-size:.8em">share one memory as a cross-project lesson</span></h3>
+<p>Shares one memory with the other projects on the machine as a lesson. <code>--why</code> says why they should see it and <code>--retract</code> takes it back.</p>
+<pre>$ <span class="g">os-brain publish 4 --why "every service that bills hits this"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--retract</td><td>Take a published lesson back out of the shared index.</td></tr>
+      <tr><td>--why &lt;text&gt;</td><td>Why other projects should see it.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="describe">
+    <h3>describe <span class="muted" style="font-weight:400;font-size:.8em">this project's spec in the shared index</span></h3>
+<p>This project's entry in the shared index, which other projects read in their brief and search with <code>global --find</code>.</p>
+<pre>$ <span class="g">os-brain describe "invoice service for orchard" --stack "go, postgres" --sync</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--does &lt;text&gt;</td><td>What the project does, in one line.</td></tr>
+      <tr><td>--keywords &lt;text&gt;</td><td>Search words.</td></tr>
+      <tr><td>--provides &lt;text&gt;</td><td>What it offers other projects.</td></tr>
+      <tr><td>--stack &lt;text&gt;</td><td>What it is built with.</td></tr>
+      <tr><td>--status &lt;text&gt;</td><td>Where it stands.</td></tr>
+      <tr><td>--sync</td><td>Restamp and push to the index.</td></tr>
+      <tr><td>--visibility &lt;text&gt;</td><td><code>described</code> | <code>listed</code>: whether other projects see the description or only the name.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="global">
+    <h3>global <span class="muted" style="font-weight:400;font-size:.8em">axioms, the project index, published lessons</span></h3>
+<p>Searches the shared side: <code>--find</code> searches the project index and <code>--recall</code> searches published lessons. Check here before solving a problem twice.</p>
+<pre>$ <span class="g">os-brain global --find "pdf rendering"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--find &lt;text&gt;</td><td>Search the project index.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many results. Default <code>10</code>.</td></tr>
+      <tr><td>--recall &lt;text&gt;</td><td>Search published lessons.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="release">
+    <h3>release <span class="muted" style="font-weight:400;font-size:.8em">publish the current brain version to the spine</span></h3>
+<p><code>release &lt;version&gt; --notes "..."</code> records in the shared store which brain version is current. Every project's brief checks itself against it. It is announced in every project's brief, so it is refused over MCP and needs a person at a terminal.</p>
+<pre>$ <span class="g">os-brain release &lt;version&gt; --notes "recall loose matches are labelled"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--notes &lt;text&gt;</td><td>What changed.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="mind">The user model and other optional features <a class="anchor" href="#mind">#</a></h2>
+    <p>These stay out of the way until you use them. <a href="mind.html">The user model has its own page.</a></p>
+    <div class="cmd" id="capture">
+    <h3>capture <span class="muted" style="font-weight:400;font-size:.8em">store what the user said, before the turn is answered</span></h3>
+<p>Stores what the user said, before the turn is answered. The prompt hook does this on every message; the command exists for agents without that hook.</p>
+<pre>$ <span class="g">os-brain capture "never deploy on a friday"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--session &lt;text&gt;</td><td>The session that heard it.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="utterances">
+    <h3>utterances <span class="muted" style="font-weight:400;font-size:.8em">what was said here and how it was classified</span></h3>
+<p>What was said in this project and how each line was classified. The prompt hook keeps up to 8000 characters per prompt for 30 days (<code>utterance_days</code> in <code>brain.json</code> changes it).</p>
+<pre>$ <span class="g">os-brain utterances --class directive</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--class &lt;text&gt;</td><td>Only this class: <code>command</code> | <code>taste</code> | <code>directive</code> | <code>exhibit</code>.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many. Default <code>20</code>.</td></tr>
+      <tr><td>--unclassified</td><td>Only what could not be classified.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="whoami">
+    <h3>whoami <span class="muted" style="font-weight:400;font-size:.8em">the user model and the evidence behind every line of it</span></h3>
+<p>The user model and the evidence behind every line of it. <code>--observe key=value</code> records a trait and needs <code>--evidence</code>; <code>--forget key</code> drops one.</p>
+<pre>$ <span class="g">os-brain whoami --observe reviews=terse --evidence "asked for one-line summaries three times"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--evidence &lt;text&gt;</td><td>What shows it; required with --observe.</td></tr>
+      <tr><td>--forget &lt;text&gt;</td><td>Drop a trait by key.</td></tr>
+      <tr><td>--observe &lt;text&gt;</td><td>Record a trait: key=value.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="object">
+    <h3>object <span class="muted" style="font-weight:400;font-size:.8em">record an objection to a memory, with its reasoning</span></h3>
+<p>Records an objection to a memory with its reasoning, which <code>ladder</code> then shows.</p>
+<pre>$ <span class="g">os-brain object 4 --why "the ledger only rounds EUR, not GBP"</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--why &lt;text&gt;</td><td>The reasoning, which is the half worth keeping.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="ladder">
+    <h3>ladder <span class="muted" style="font-weight:400;font-size:.8em">where a memory stands: stated, hardened or law</span></h3>
+<p>How settled a memory is: <em>stated</em> once, <em>hardened</em> because later sessions stated it again, or <em>law</em>. With <code>object</code> it lets the brain show how well a fact stands instead of a session just claiming it.</p>
+<pre>$ <span class="g">os-brain ladder 4</span></pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+    <div class="cmd" id="lead">
+    <h3>lead <span class="muted" style="font-weight:400;font-size:.8em">sales pipeline (optional)</span></h3>
+<p>A small sales pipeline, for projects that have one. With no subcommand it lists leads; then <code>add</code>, <code>show &lt;id&gt;</code>, <code>update &lt;id&gt;</code>, <code>pipeline</code>, <code>hot</code> and <code>next</code>. The brief shows the hot ones and the next actions.</p>
+<pre>$ <span class="g">os-brain lead add --name "Ada" --company "Orchard Foods" --status contacted --next-date 2026-12-01</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--append-note &lt;text&gt;</td><td>Timestamped line onto the notes.</td></tr>
+      <tr><td>--channel &lt;text&gt;</td><td>How you reach them.</td></tr>
+      <tr><td>--company &lt;text&gt;</td><td>Their company.</td></tr>
+      <tr><td>--email &lt;text&gt;</td><td>Their email.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many to list. Default <code>50</code>.</td></tr>
+      <tr><td>--name &lt;text&gt;</td><td>Their name.</td></tr>
+      <tr><td>--next-action &lt;text&gt;</td><td>What to do next.</td></tr>
+      <tr><td>--next-date &lt;text&gt;</td><td>When.</td></tr>
+      <tr><td>--notes &lt;text&gt;</td><td>Free text, replacing the notes.</td></tr>
+      <tr><td>--role &lt;text&gt;</td><td>Their role.</td></tr>
+      <tr><td>--segment &lt;text&gt;</td><td>Which market segment.</td></tr>
+      <tr><td>--status &lt;text&gt;</td><td><code>new</code> | <code>researching</code> | <code>contacted</code> | <code>replied</code> | <code>engaged</code> | <code>demo</code> | <code>trial</code> | <code>negotiating</code> | <code>won</code> | <code>lost</code> | <code>skip</code>.</td></tr>
+      <tr><td>--tier &lt;text&gt;</td><td>Your own grading.</td></tr>
+      <tr><td>--url &lt;text&gt;</td><td>A link.</td></tr>
+      <tr><td>--value-est &lt;n&gt;</td><td>What it might be worth.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="surfaces">Other ways in <a class="anchor" href="#surfaces">#</a></h2>
+    <p>The same commands, reached without typing them: from a browser, over MCP, or from the agent's own hooks.</p>
+    <div class="cmd" id="ui">
+    <h3>ui <span class="muted" style="font-weight:400;font-size:.8em">the web UI, served from this binary (no Node, no install)</span></h3>
+<p>The web UI, served from this binary on loopback. No Node, nothing to install. Plain HTTP, so any other <code>--host</code> is refused and the refusal tells you to use an SSH tunnel. <a href="ui.html">The UI page</a> covers it.</p>
+<pre>$ <span class="g">os-brain ui --no-open --port 8100</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--host &lt;text&gt;</td><td>A loopback address. Anything else is refused. Default <code>127.0.0.1</code>.</td></tr>
+      <tr><td>--no-open</td><td>Do not open a browser.</td></tr>
+      <tr><td>--port &lt;n&gt;</td><td>The port. Default <code>7788</code>.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="mcp">
+    <h3>mcp <span class="muted" style="font-weight:400;font-size:.8em">serve every command over MCP (stdio, or --http for another machine)</span></h3>
+<p>Nearly every command as an MCP tool, over stdio or Streamable HTTP with <code>--http &lt;addr&gt;</code>. Off loopback it refuses to start without <code>--tls-cert</code>, <code>--tls-key</code> and <code>--token</code>. On loopback with no token it mints one into a mode-600 file. <code>--public-url</code> mounts OAuth for hosted clients. <a href="mcp.html">The MCP page</a> covers it.</p>
+<pre>$ <span class="g">os-brain mcp</span><span class="c">                                    # stdio, started by the client</span>
+$ <span class="g">os-brain mcp --http 127.0.0.1:7801</span><span class="c">               # HTTP on /mcp, token minted</span>
+$ <span class="g">OS_BRAIN_MCP_TOKEN=... os-brain mcp --http 0.0.0.0:7801 \
+      --tls-cert cert.pem --tls-key key.pem</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-host &lt;text&gt;</td><td>Comma-separated Host names answered besides loopback ones, for a reverse proxy that passes its public name through.</td></tr>
+      <tr><td>--http &lt;text&gt;</td><td>Serve Streamable HTTP on this address instead of stdio, e.g. 127.0.0.1:7777.</td></tr>
+      <tr><td>--oauth-redirect-host &lt;text&gt;</td><td>With --public-url: the only host an OAuth client may register an https redirect to (repeatable; e.g. claude.ai). Unset, any https redirect or http on loopback registers.</td></tr>
+      <tr><td>--origin &lt;text&gt;</td><td>Comma-separated allowed Origins, or *.</td></tr>
+      <tr><td>--public-url &lt;text&gt;</td><td>The https URL hosted clients reach this server at (e.g. a Tailscale Funnel name); mounts OAuth so the Claude app can connect, with --token as the password on the login page.</td></tr>
+      <tr><td>--tls-cert &lt;text&gt;</td><td>Serve HTTPS with this certificate (PEM); required, with --tls-key, for any bind that is not loopback.</td></tr>
+      <tr><td>--tls-key &lt;text&gt;</td><td>The certificate's private key (PEM).</td></tr>
+      <tr><td>--token &lt;text&gt;</td><td>Bearer token; required off loopback and minted per process into a mode-600 file when omitted on loopback. With --public-url it is the login page's password and is not accepted as a bearer.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="channel">
+    <h3>channel <span class="muted" style="font-weight:400;font-size:.8em">MCP channel server: wakes this session the moment a direct message arrives</span></h3>
+<p>An MCP channel server that wakes a Claude Code session the moment a direct message arrives. <code>init --channel</code> registers it in <code>.mcp.json</code>. It is not offered as an MCP tool, since it runs until killed.</p>
+<pre>$ <span class="g">os-brain init --channel</span></pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+    <div class="cmd" id="hook-recall">
+    <h3>hook-recall <span class="muted" style="font-weight:400;font-size:.8em">UserPromptSubmit hook: auto-recall from the prompt</span></h3>
+<p>What the per-prompt hook runs. It reads the hook payload on stdin, prints the clock and the gap since the last message, stores what was typed, then puts the memories that match the prompt into context. You never call it yourself; <code>init</code> wires it.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--chars &lt;n&gt;</td><td>Body characters per hit. Default <code>180</code>.</td></tr>
+      <tr><td>--emit &lt;text&gt;</td><td>Envelope the host agent needs: gemini, codex, hermes. Without it, plain text.</td></tr>
+      <tr><td>--idle-after &lt;n&gt;</td><td>Minutes of silence before the gap is called out. Default <code>20</code>.</td></tr>
+      <tr><td>--min-chars &lt;n&gt;</td><td>Ignore prompts shorter than this. Default <code>15</code>.</td></tr>
+      <tr><td>--min-score &lt;n&gt;</td><td>The lowest score a memory needs to be shown. Default <code>0.55</code>.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many memories at most. Default <code>3</code>.</td></tr>
+      <tr><td>--no-clock</td><td>Leave out the clock line.</td></tr>
+      <tr><td>--no-nudge</td><td>Leave out the reminder to save a preference when the prompt sounds like one.</td></tr>
+      <tr><td>--scope &lt;text&gt;</td><td>Recall from this scope.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="hook-stop">
+    <h3>hook-stop <span class="muted" style="font-weight:400;font-size:.8em">Stop hook: what this session did and whether it stored any of it</span></h3>
+<p>What the end-of-turn hook runs: a record of what this session did and whether it stored any of it, for the next brief. It reads no stdin, so it stays an MCP tool.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--emit &lt;text&gt;</td><td>Envelope the host agent needs: gemini, codex. Without it, plain text.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="hook-tool">
+    <h3>hook-tool <span class="muted" style="font-weight:400;font-size:.8em">PostToolUse hook: hand a running session its direct messages mid-turn</span></h3>
+<p>What the after-each-tool hook runs: it hands a running session its direct messages in the middle of a turn.</p>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+    <div class="cmd" id="hook-end">
+    <h3>hook-end <span class="muted" style="font-weight:400;font-size:.8em">SessionEnd hook: mark this session gone, so nobody messages it</span></h3>
+<p>What the session-end hook runs: it marks the session gone, so nobody messages it.</p>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+    <div class="cmd" id="plugin-hook">
+    <h3>plugin-hook <span class="muted" style="font-weight:400;font-size:.8em">what an agent plugin runs: finds the brain itself, or says there is none</span></h3>
+<p>What an agent plugin runs in place of the per-project hooks <code>init</code> writes. A plugin is installed once per person and fires in every project, so it finds the brain the session is in. In a project with no brain, session start says so once and every other event says nothing. In a project <code>init</code> already wired it steps aside, so the session is not briefed twice. It runs only <code>wakeup</code>, <code>hook-recall</code>, <code>hook-stop</code>, <code>hook-tool</code> and <code>hook-end</code>. It never runs over MCP.</p>
+<pre>$ <span class="g">os-brain plugin-hook --host claude wakeup</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--host &lt;text&gt;</td><td>The agent the plugin is installed in: <code>claude</code>, <code>codex</code>, <code>copilot</code>, <code>cursor</code>, <code>devin</code>, <code>gemini</code>, <code>kilo</code>, <code>opencode</code> or <code>qwen</code>. Required.</td></tr>
+    </table>
+    </div>
+    </div>
+
+    <h2 id="lifecycle">Install and lifecycle <a class="anchor" href="#lifecycle">#</a></h2>
+    <p>How a brain is created, seeded and removed again.</p>
+    <div class="cmd" id="init">
+    <h3>init <span class="muted" style="font-weight:400;font-size:.8em">create a brain in this project and wire the session hooks</span></h3>
+<p>Creates a brain in this project and wires the agent hooks. It writes <code>brain/brain.json</code> (meant to be committed), <code>brain/brain.db</code> (added to <code>.gitignore</code>), <code>brain/HOWTO.md</code> and <code>brain/BEST-PRACTICES.md</code>. At a terminal it asks which agent to wire; with no terminal it wires every agent whose config directory it finds in the project or your home directory. When an agent cannot be wired it prints the block to add by hand rather than pretending. It never writes into <code>CLAUDE.md</code>. Running it again is safe: it brings the database up to the current schema in place and never overwrites it. <a href="agents.html">The agents page</a> shows what it writes for each agent.</p>
+<p>It refuses a project where a file it would write is a symbolic link or sits under one. It checks before writing anything: a cloned repository could commit a link at <code>.claude/settings.json</code> that points at a file in your home directory.</p>
+<pre>$ <span class="g">os-brain init --agent claude</span>
+brain ready at /home/you/src/orchard/brain/brain.db
+  + brain.json for 'orchard'
+  + brain.db at schema v16
+  + .gitignore entry for brain/brain.db*
+  + HOWTO.md
+  + BEST-PRACTICES.md
+  + SessionStart hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain wakeup
+  + Stop hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain hook-stop
+  ...</pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--agent &lt;text&gt;</td><td>Wire these agents (claude,codex,cursor,gemini,opencode,kilo,copilot,devin,qwen,hermes,continue) instead of detecting.</td></tr>
+      <tr><td>--channel</td><td>Register the direct-message channel in .mcp.json.</td></tr>
+      <tr><td>--dir &lt;text&gt;</td><td>Where the brain goes, relative to the project. Default <code>brain</code>.</td></tr>
+      <tr><td>--no-auto-recall</td><td>Skip the UserPromptSubmit hook.</td></tr>
+      <tr><td>--no-gitignore</td><td>Do not add brain.db to .gitignore.</td></tr>
+      <tr><td>--no-hook</td><td>Do not touch .claude/settings.json.</td></tr>
+      <tr><td>--project &lt;text&gt;</td><td>Name it calls itself (default: the directory).</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="uninstall">
+    <h3>uninstall <span class="muted" style="font-weight:400;font-size:.8em">remove it again: dry run unless --apply, keeps the database unless --purge</span></h3>
+<p>Removes the hooks, the docs and the config again. It is a dry run unless you add <code>--apply</code> and it takes a backup first either way. It never deletes <code>brain.db</code> without <code>--purge</code>: one <code>init</code> recreates everything else while nothing recreates the database. It only acts on the brain the command opened; pointing it at another one with a path or <code>--dir</code> is refused.</p>
+<pre>$ <span class="g">os-brain uninstall</span><span class="c">            # the plan</span>
+$ <span class="g">os-brain uninstall --apply</span><span class="c">    # hooks and files gone, brain.db kept</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--allow-outside</td><td>Write the dump outside the project.</td></tr>
+      <tr><td>--allow-tracked</td><td>Write the dump to a git-tracked path.</td></tr>
+      <tr><td>--apply</td><td>Actually do it (default: report the plan).</td></tr>
+      <tr><td>--backup &lt;text&gt;</td><td>Where to write the dump taken first.</td></tr>
+      <tr><td>--dir &lt;text&gt;</td><td>The brain directory, relative to the project. Default <code>brain</code>.</td></tr>
+      <tr><td>--force</td><td>Overwrite a --backup file this tool did not generate.</td></tr>
+      <tr><td>--purge</td><td>Delete <code>brain.db</code> too. It is the only copy.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="bootstrap">
+    <h3>bootstrap <span class="muted" style="font-weight:400;font-size:.8em">seed a new brain from past session transcripts</span></h3>
+<p>Seeds a new brain from this project's past Claude Code session transcripts. It writes no memories itself: it lists the transcripts and the agent reads them and stores what is worth keeping. <code>--read</code> marks one done, <code>--done</code> ends the pass and <code>--again</code> starts another.</p>
+<pre>$ <span class="g">os-brain bootstrap</span></pre>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Flag</th><th>What it does</th></tr>
+      <tr><td>--again</td><td>Go through the transcripts once more.</td></tr>
+      <tr><td>--done</td><td>Record that the pass is finished.</td></tr>
+      <tr><td>--include-moved</td><td>Also read directories matching this project's name but not its path.</td></tr>
+      <tr><td>--n &lt;n&gt;</td><td>How many transcripts to list. Default <code>12</code>.</td></tr>
+      <tr><td>--read &lt;text&gt;</td><td>Repeatable: mark one transcript read.</td></tr>
+    </table>
+    </div>
+    </div>
+    <div class="cmd" id="version">
+    <h3>version <span class="muted" style="font-weight:400;font-size:.8em">print the version</span></h3>
+<p>Prints the build and the schema version. <code>--version</code> and <code>-v</code> work too.</p>
+<pre>$ <span class="g">os-brain version</span>
+os-brain 26110501 (schema v16)</pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+    <div class="cmd" id="help">
+    <h3>help <span class="muted" style="font-weight:400;font-size:.8em">show full command surface</span></h3>
+<p><code>help</code> lists every command with the scoping rule and the decay tiers. <code>help &lt;command&gt;</code> prints that command's own flags, read from the same registration the MCP schemas use, so the list cannot drift from the code. The flag tables on this page were generated from it.</p>
+<pre>$ <span class="g">os-brain help recall</span></pre>
+    <p class="muted">No flags of its own beyond <code>--json</code>.</p>
+    </div>
+
+    <h2 id="env">Environment <a class="anchor" href="#env">#</a></h2>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Variable</th><th>What it overrides</th></tr>
+      <tr><td>OS_BRAIN_HOME</td><td>The brain directory, the one holding <code>brain.json</code>, instead of searching upward from the working directory. The hooks <code>init</code> writes set it.</td></tr>
+      <tr><td>OS_BRAIN_PROJECT</td><td>The project name a write is filed under, instead of <code>brain.json</code>'s. This one matters most over MCP on a shared store.</td></tr>
+      <tr><td>OS_BRAIN_DB</td><td>The database file this project uses.</td></tr>
+      <tr><td>OS_BRAIN_GLOBAL_DB</td><td>The shared store: axioms, standards, the project index, notes, published lessons and the memories of every shared project. Default <code>~/.claude/os-brain/brain.db</code>. Safety copies and MCP token files go in the directory beside it.</td></tr>
+      <tr><td>CLAUDE_CONFIG_DIR</td><td>Where Claude Code keeps its files (default <code>~/.claude</code>). Without <code>OS_BRAIN_GLOBAL_DB</code> the shared store is <code>os-brain/brain.db</code> under it.</td></tr>
+      <tr><td>OS_BRAIN_MAX_BYTES</td><td>The default <code>--max-bytes</code> for <code>brief</code> and <code>wakeup</code>.</td></tr>
+      <tr><td>OS_BRAIN_MCP_TOKEN</td><td>The <code>mcp --http</code> token, so it stays off the command line where any user on the machine can read it with <code>ps</code>. A <code>--token</code> flag wins.</td></tr>
+      <tr><td>OS_BRAIN_MACHINE</td><td>The machine name the brain records and prints, instead of the hostname.</td></tr>
+      <tr><td>OS_BRAIN_SESSION_ID</td><td>The session a write is attributed to. Hooks set it from the agent's payload; you rarely need to.</td></tr>
+    </table>
+    </div>
+    <div class="note">
+      <strong>Testing with throwaway paths.</strong> Every command registers its project in the shared index, so a throwaway brain on the default paths leaves rows in the store you really use. For anything disposable, point <code>CLAUDE_CONFIG_DIR</code> and <code>OS_BRAIN_GLOBAL_DB</code> at a scratch directory.
+    </div>
+
+    <h2 id="index">All commands <a class="anchor" href="#index">#</a></h2>
+    <p>The list <code>os-brain help</code> prints, in the order of this page.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Command</th><th>What it does</th></tr>
+      <tr><td><a href="#remember">remember</a></td><td>store a memory (same scope+title updates in place)</td></tr>
+      <tr><td><a href="#prefer">prefer</a></td><td>store how the user wants to be worked with</td></tr>
+      <tr><td><a href="#log">log</a></td><td>append an activity event</td></tr>
+      <tr><td><a href="#recall">recall</a></td><td>retrieve ranked memories</td></tr>
+      <tr><td><a href="#brief">brief</a></td><td>session handoff snapshot</td></tr>
+      <tr><td><a href="#wakeup">wakeup</a></td><td>session open: the brief, the working tree and this project's own probes</td></tr>
+      <tr><td><a href="#get">get</a></td><td>show one memory by id</td></tr>
+      <tr><td><a href="#open">open</a></td><td>what is outstanding: open tasks, work in flight, what just happened</td></tr>
+      <tr><td><a href="#events">events</a></td><td>recent activity</td></tr>
+      <tr><td><a href="#stats">stats</a></td><td>counts</td></tr>
+      <tr><td><a href="#map">map</a></td><td>index of scopes, types, event kinds and pinned memories</td></tr>
+      <tr><td><a href="#coverage">coverage</a></td><td>what this project knows about, by category</td></tr>
+      <tr><td><a href="#env">env</a></td><td>date, time, paths, git and project context</td></tr>
+      <tr><td><a href="#update">update</a></td><td>edit a memory</td></tr>
+      <tr><td><a href="#verify">verify</a></td><td>mark a memory re-checked today</td></tr>
+      <tr><td><a href="#history">history</a></td><td>archived versions of memories</td></tr>
+      <tr><td><a href="#restore">restore</a></td><td>bring back an archived version</td></tr>
+      <tr><td><a href="#promote">promote</a></td><td>move a memory up to a wider scope</td></tr>
+      <tr><td><a href="#task">task</a></td><td>what is owed, by whom and when: reminders, recurrence, an ordered list</td></tr>
+      <tr><td><a href="#measure">measure</a></td><td>numbers that only mean something as a series</td></tr>
+      <tr><td><a href="#review">review</a></td><td>hygiene report: duplicates, decay, promotions</td></tr>
+      <tr><td><a href="#doctor">doctor</a></td><td>check the brain for inconsistency</td></tr>
+      <tr><td><a href="#reindex">reindex</a></td><td>rebuild the FTS index from the memories table</td></tr>
+      <tr><td><a href="#vacuum">vacuum</a></td><td>checkpoint the WAL and compact the database</td></tr>
+      <tr><td><a href="#forget">forget</a></td><td>delete a memory (leaves a tombstone)</td></tr>
+      <tr><td><a href="#prune">prune</a></td><td>delete decayed or superseded memories (dry run by default)</td></tr>
+      <tr><td><a href="#export">export</a></td><td>dump the whole brain as JSON (take one before pruning)</td></tr>
+      <tr><td><a href="#import">import</a></td><td>merge a JSON export into this brain</td></tr>
+      <tr><td><a href="#backup">backup</a></td><td>timestamped full dump, every table enumerated from the schema</td></tr>
+      <tr><td><a href="#snapshot">snapshot</a></td><td>generated markdown mirror of the brain</td></tr>
+      <tr><td><a href="#share">share</a></td><td>move this project into the shared store, or back out (dry run by default)</td></tr>
+      <tr><td><a href="#private">private</a></td><td>keep this project's memories out of other projects' --all-projects</td></tr>
+      <tr><td><a href="#absorb">absorb</a></td><td>pull a standalone brain.db in as a project</td></tr>
+      <tr><td><a href="#relabel">relabel</a></td><td>claim rows filed under another label as this project</td></tr>
+      <tr><td><a href="#context">context</a></td><td>project facts injected into every brief</td></tr>
+      <tr><td><a href="#scope">scope</a></td><td>declare scopes in brain.json</td></tr>
+      <tr><td><a href="#kind">kind</a></td><td>declare event kinds in brain.json</td></tr>
+      <tr><td><a href="#axiom">axiom</a></td><td>rules that hold in every project</td></tr>
+      <tr><td><a href="#standard">standard</a></td><td>house defaults every new project inherits</td></tr>
+      <tr><td><a href="#note">note</a></td><td>leave a note for another project, or read yours</td></tr>
+      <tr><td><a href="#sessions">sessions</a></td><td>the running Claude Code sessions this brain can reach</td></tr>
+      <tr><td><a href="#dm">dm</a></td><td>send a direct message to one running session ("-" reads the body from stdin)</td></tr>
+      <tr><td><a href="#publish">publish</a></td><td>share one memory as a cross-project lesson</td></tr>
+      <tr><td><a href="#describe">describe</a></td><td>this project's spec in the shared index</td></tr>
+      <tr><td><a href="#global">global</a></td><td>axioms, the project index, published lessons</td></tr>
+      <tr><td><a href="#release">release</a></td><td>publish the current brain version to the spine</td></tr>
+      <tr><td><a href="#capture">capture</a></td><td>store what the user said, before the turn is answered</td></tr>
+      <tr><td><a href="#utterances">utterances</a></td><td>what was said here and how it was classified</td></tr>
+      <tr><td><a href="#whoami">whoami</a></td><td>the user model and the evidence behind every line of it</td></tr>
+      <tr><td><a href="#object">object</a></td><td>record an objection to a memory, with its reasoning</td></tr>
+      <tr><td><a href="#ladder">ladder</a></td><td>where a memory stands: stated, hardened or law</td></tr>
+      <tr><td><a href="#lead">lead</a></td><td>sales pipeline (optional)</td></tr>
+      <tr><td><a href="#ui">ui</a></td><td>the web UI, served from this binary (no Node, no install)</td></tr>
+      <tr><td><a href="#mcp">mcp</a></td><td>serve every command over MCP (stdio, or --http for another machine)</td></tr>
+      <tr><td><a href="#channel">channel</a></td><td>MCP channel server: wakes this session the moment a direct message arrives</td></tr>
+      <tr><td><a href="#hook-recall">hook-recall</a></td><td>UserPromptSubmit hook: auto-recall from the prompt</td></tr>
+      <tr><td><a href="#hook-stop">hook-stop</a></td><td>Stop hook: what this session did and whether it stored any of it</td></tr>
+      <tr><td><a href="#hook-tool">hook-tool</a></td><td>PostToolUse hook: hand a running session its direct messages mid-turn</td></tr>
+      <tr><td><a href="#hook-end">hook-end</a></td><td>SessionEnd hook: mark this session gone, so nobody messages it</td></tr>
+      <tr><td><a href="#plugin-hook">plugin-hook</a></td><td>what an agent plugin runs: finds the brain itself, or says there is none</td></tr>
+      <tr><td><a href="#init">init</a></td><td>create a brain in this project and wire the session hooks</td></tr>
+      <tr><td><a href="#uninstall">uninstall</a></td><td>remove it again: dry run unless --apply, keeps the database unless --purge</td></tr>
+      <tr><td><a href="#bootstrap">bootstrap</a></td><td>seed a new brain from past session transcripts</td></tr>
+      <tr><td><a href="#version">version</a></td><td>print the version</td></tr>
+      <tr><td><a href="#help">help</a></td><td>show full command surface</td></tr>
+    </table>
+    </div>
+
+  </main>
+</div>
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

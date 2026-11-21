@@ -28,7 +28,7 @@ func buildBinary(t *testing.T) string {
 		t.Fatal(err)
 	}
 	bin := filepath.Join(t.TempDir(), "os-brain-test")
-	cmd := exec.Command("go", "build", "-o", bin, ".")
+	cmd := exec.Command("go", "build", "-o", bin, "./cmd/os-brain")
 	cmd.Dir = root
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("building the CLI for a cross-process test: %v\n%s", err, out)

@@ -29,7 +29,7 @@ def build_sweep_binary():
     # say) never test each other's binary.
     out = os.path.join(tempfile.mkdtemp(prefix="os-brain-sweep-bin-"), "os-brain")
     src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    r = subprocess.run(["go", "build", "-tags", "sweep", "-o", out, "."], cwd=src, capture_output=True, text=True)
+    r = subprocess.run(["go", "build", "-tags", "sweep", "-o", out, "./cmd/os-brain"], cwd=src, capture_output=True, text=True)
     if r.returncode != 0:
         sys.exit("building the sweep binary failed:\n" + r.stdout + r.stderr)
     return out

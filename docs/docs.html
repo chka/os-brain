@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain · documentation</title>
+<meta name="description" content="The os-brain manual: install, the memory model, every command, agents, MCP, sharing between projects and troubleshooting.">
+<link rel="canonical" href="https://chka.github.io/os-brain/docs.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Documentation</div>
+    <h1>Everything, in the<br>order you'll <em>need</em> it.</h1>
+    <p class="lede">One binary. Your memories live in a SQLite file on your own machine. Your agent reaches them in three ways: the session hooks bring them in without being asked, while shell commands and MCP are how the agent asks the brain and writes to it. Start with install. Read the memory model once, because it explains every time the brain says no. Keep the CLI reference open.</p>
+  </div>
+</header>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="sec-kicker">Start here</div>
+    <div class="grid g3">
+      <a class="door" href="install.html">
+        <div class="tag">Start here</div>
+        <h3>Install and the first hour</h3>
+        <p>Build the binary, create a brain, check the hooks really ran and fill the brain from a project that already has months of history.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="how-it-works.html">
+        <div class="tag">The idea</div>
+        <h3>How it works</h3>
+        <p>The six mechanisms a notes file cannot give you, a real recall and what the brain does when it is not sure.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="concepts.html">
+        <div class="tag">The model</div>
+        <h3>How memory works here</h3>
+        <p>Types, how fast each one fades, scopes, confidence and trust, corrections and the guardrails. The one page worth reading top to bottom.</p>
+        <span class="more">Read →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="tight" style="padding-top:0;">
+  <div class="wrap">
+    <div class="sec-kicker">Reference</div>
+    <div class="grid g3">
+      <a class="door" href="cli.html">
+        <div class="tag">Reference</div>
+        <h3>Every command, every flag</h3>
+        <p>Every command with the flags that matter and what each refusal protects. Checked against the binary, not written from memory.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="agents.html">
+        <div class="tag">Surface</div>
+        <h3>Your coding agent</h3>
+        <p>Each supported agent, the files <code>init</code> writes for it and which hook events it gets.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="mcp.html">
+        <div class="tag">Surface</div>
+        <h3>MCP, stdio and HTTP</h3>
+        <p>The commands as MCP tools, on stdio for an agent that starts the server or on Streamable HTTP for a client elsewhere, with the security rules for each.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="ui.html">
+        <div class="tag">Surface</div>
+        <h3>The web UI in the binary</h3>
+        <p><code>os-brain ui</code> on loopback, port 7788. No Node and nothing to install.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="phone.html">
+        <div class="tag">Surface</div>
+        <h3>The brain from your phone</h3>
+        <p>The MCP server published over HTTPS with OAuth, so a hosted client can reach your brain.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="axioms.html">
+        <div class="tag">Reference</div>
+        <h3>The axioms it ships</h3>
+        <p>The rules every project on the machine inherits, word for word as the binary carries them.</p>
+        <span class="more">Read →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="tight" style="padding-top:0;">
+  <div class="wrap">
+    <div class="sec-kicker">Going further</div>
+    <div class="grid g3">
+      <a class="door" href="mind.html">
+        <div class="tag">The person</div>
+        <h3>The user model</h3>
+        <p>How the brain learns how you want to work: <code>prefer</code>, <code>whoami</code>, captured prompts and the ladder from stated to law.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="tasks.html">
+        <div class="tag">Beyond memories</div>
+        <h3>Tasks and measures</h3>
+        <p>What is owed and when, recurring schedules, numbers that only make sense as a series and the optional pipeline.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="sharing.html">
+        <div class="tag">Many projects</div>
+        <h3>One machine, several projects</h3>
+        <p>The shared store, notes between projects, publishing a lesson, keeping a project private and moving one into the shared store.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="context.html">
+        <div class="tag">Why hooks</div>
+        <h3>Context that stays true</h3>
+        <p>Why the brain loads through hooks rather than lines in an instructions file that nobody keeps up to date.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="troubleshooting.html">
+        <div class="tag">When it is wrong</div>
+        <h3>Troubleshooting</h3>
+        <p>The brief did not show up, recall finds nothing, a refusal you don't understand. <code>doctor</code>, safety copies and restore.</p>
+        <span class="more">Read →</span>
+      </a>
+      <a class="door" href="editions.html">
+        <div class="tag">Editions</div>
+        <h3>os-brain and the team edition</h3>
+        <p>What each one does and how a brain moves between them without losing a memory.</p>
+        <span class="more">Read →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="banded">
+  <div class="wrap split">
+    <div>
+      <div class="sec-kicker">Pick by situation</div>
+      <h2>What to read,<br>for <em>what</em>.</h2>
+      <p class="sec-body" style="margin-top:16px;">Most people use one machine as one developer. For them the install page and the CLI reference cover everything. The rest is for when you add another agent or a second project.</p>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Situation</th><th>What you run</th><th>Page</th></tr>
+        <tr><td>One machine, one developer</td><td>The CLI, wired to session hooks</td><td><a href="install.html">Install</a></td></tr>
+        <tr><td>An agent that cannot run shell commands</td><td>MCP over stdio</td><td><a href="mcp.html">MCP</a></td></tr>
+        <tr><td>A client on another machine</td><td>MCP over Streamable HTTP, with TLS and a token</td><td><a href="mcp.html">MCP</a></td></tr>
+        <tr><td>Six projects and one set of habits</td><td>The shared store, with per-project opt-out</td><td><a href="sharing.html">Sharing</a></td></tr>
+        <tr><td>Something looks wrong</td><td><code>os-brain doctor</code></td><td><a href="troubleshooting.html">Troubleshooting</a></td></tr>
+        <tr><td>A bug to report</td><td>A GitHub issue</td><td><a href="help.html">Help</a></td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split">
+    <div>
+      <div class="sec-kicker">For the agent, not for you</div>
+      <h2>Two documents ship<br><em>inside</em> the binary.</h2>
+    </div>
+    <div class="sec-body">
+      <p><code>os-brain init</code> writes both into the brain directory, <code>brain/</code>, so your agent already has them without downloading anything. It does not edit your <code>CLAUDE.md</code>. Both are also in the root of <a href="https://github.com/chka/os-brain">the repository</a>.</p>
+      <p><code>HOWTO.md</code> is the how: which command to use, what each flag changes and what the output looks like. <code>BEST-PRACTICES.md</code> is the when: what is worth saving, what the code or git already says (so saving it is noise) and how to write a title you can still find months later.</p>
+      <p>On the command line, <code>os-brain help</code> lists every command and <code>os-brain help &lt;command&gt;</code> prints its flags.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

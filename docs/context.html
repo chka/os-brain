@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hooks, not CLAUDE.md</title>
+<meta name="description" content="Why os-brain reaches your agent through session hooks instead of lines in CLAUDE.md or AGENTS.md, what a markdown file cannot do and what init deliberately leaves alone.">
+<link rel="canonical" href="https://chka.github.io/os-brain/context.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap" style="max-width:900px;">
+    <div class="stagger">
+      <div class="kicker">Why hooks</div>
+      <h1>A line in CLAUDE.md<br>is a request.<br>A hook <em>runs</em>.</h1>
+      <p class="lede" style="max-width:38em;">os-brain writes nothing into <code>CLAUDE.md</code>, <code>AGENTS.md</code> or any other instruction file. It reaches the agent through the hooks the agent already runs. <b>This page is the reasoning behind that choice and the five things a markdown file cannot do.</b></p>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">01 / A wish and a mechanism</div>
+      <h2>The model may<br>skip a line.<br>It cannot skip<br>a <em>hook</em>.</h2>
+    </div>
+    <div class="obs sec-body">
+      <p>An instruction file is text the model reads and then weighs against everything else in its context. "Check the brain before you search files" is a sentence like any other. Under a vague question the model's habit wins and it goes and opens the files.</p>
+      <p>A hook is a command the agent runs by itself at a fixed moment. <code>os-brain init</code> wires five of them for Claude Code and none of them depends on the model deciding to look:</p>
+<pre><span class="o">SessionStart      </span>$ <span class="g">os-brain wakeup</span>       <span class="c"># the brief, before turn one</span>
+<span class="o">UserPromptSubmit  </span>$ <span class="g">os-brain hook-recall</span>  <span class="c"># memories that match this prompt</span>
+<span class="o">Stop              </span>$ <span class="g">os-brain hook-stop</span>    <span class="c"># what the session did and stored</span>
+<span class="o">PostToolUse       </span>$ <span class="g">os-brain hook-tool</span>    <span class="c"># direct messages, mid turn</span>
+<span class="o">SessionEnd        </span>$ <span class="g">os-brain hook-end</span>     <span class="c"># mark the session gone</span></pre>
+      <p>The text that used to sit in an instruction file ("this project has a brain, recall before you search, write before you finish") now opens the brief instead. It is paid for once per session instead of staying resident in the context window for all of it. <a href="agents.html">The agents page</a> says what <code>init</code> wires for each of the other agents.</p>
+    </div>
+  </div>
+</section>
+
+<section class="banded">
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">02 / Every turn</div>
+      <h2>Recall on the<br>prompt, not on<br><em>request</em>.</h2>
+    </div>
+    <div class="obs sec-body">
+      <p>The per-prompt hook searches the brain for what you just typed and puts the matches in front of the model before it answers. The model does not have to think of asking.</p>
+<pre>$ <span class="c"># you type: why do the invoice PDFs lose their fonts on the new box?</span>
+<span class="o">[brain] 2026-11-21 00:00 GMT (Saturday night)
+[invoices brain · local file] possibly relevant memories (os-brain get &lt;id&gt; for the full text):
+  #4 [global/gotcha] The PDF renderer drops fonts when the cache dir is not writable &mdash; set FONTCONFIG_CACHE to a writable path in the unit file</span></pre>
+      <p>An instruction file is loaded once, whole, whatever you go on to ask. This answers the question you actually asked, on the turn you asked it.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="obs" style="max-width:34em;margin-bottom:44px;">
+      <div class="sec-kicker">03 / What a markdown file cannot do</div>
+      <h2>Five differences.<br>None of them<br>is <em>size</em> alone.</h2>
+    </div>
+    <div class="grid g2 obs">
+      <div class="door">
+        <div class="tag">Supersession</div>
+        <h3>Fix it once</h3>
+        <p>Nothing in a markdown file can say that one line replaced another. Both lines load into every session and the model goes with whichever one it noticed. <code>--supersedes</code> makes the new fact replace the old one and a search in the old words gets the new answer, with the old one kept as history.</p>
+      </div>
+      <div class="door">
+        <div class="tag">Dated to a tree</div>
+        <h3>A fact about code knows which commit it was true at</h3>
+        <p>A <code>gotcha</code>, <code>state</code> or <code>incident</code> carries the commit it was saved at. Recall prints <span class="muted">tree unchanged since stored</span> or <span class="muted">2 commits since stored</span> with a reminder to re-check against source, fact by fact. A markdown file says nothing about when a line was written, so the only safe move is to re-read everything.</p>
+      </div>
+      <div class="door">
+        <div class="tag">Decay</div>
+        <h3>Old news fades at a speed set by its type</h3>
+        <p>Infrastructure facts never fade. "The box is rebooting" loses half its weight every four days and is buried within two weeks without anyone deleting it. In a markdown file nothing fades, so the only edit anyone ever makes is to add more.</p>
+      </div>
+      <div class="door">
+        <div class="tag">A budget</div>
+        <h3>The brief cannot grow without limit</h3>
+        <p>It ranks what it has, cuts the least important parts, names what it cut and prints the command to see the rest. By default it is 6000 bytes, about 1.5k tokens. Guardrails and preferences are printed first, so a host that truncates still keeps the part that binds.</p>
+      </div>
+      <div class="door">
+        <div class="tag">Review dates</div>
+        <h3>Facts the world can change ask to be checked</h3>
+        <p>A host moves or a key is rotated and nothing in the repository records it. <code>infra</code> and <code>access</code> memories get a review date 30 days out and show up as due when it passes. A line in a markdown file looks just as current on the day it goes wrong.</p>
+      </div>
+      <div class="door">
+        <div class="tag">And one deliberate omission</div>
+        <h3>Decisions get no commit stamp at all</h3>
+        <p>Only the person who made a decision can make it wrong, never a commit. Flagging one as stale invites people to argue it again. So the staleness line stays on a short list of types: a warning that shows on every memory is one everybody learns to skip.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="banded">
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">04 / Writes too</div>
+      <h2>A session that<br>stored nothing<br>is <em>told</em>.</h2>
+    </div>
+    <div class="obs sec-body">
+      <p>Hooking the reads and leaving the writes to an instruction would keep half the problem. A session that learned five things and stored none would look exactly like one that learned nothing.</p>
+      <p>So the Stop hook closes each session's record and, when a session ran for a while or moved the tree and stored nothing, says so. The next session's brief says it again, once, under THE LAST SESSION HERE LEFT NOTHING BEHIND. A report at the end reaches the session that already failed. A report at the start reaches one that can still act.</p>
+      <p>Nothing forces a write and nothing should. A two-minute session, or one that stored something, is never flagged.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">05 / One store</div>
+      <h2>Two memories<br>means a silent<br><em>contradiction</em>.</h2>
+    </div>
+    <div class="obs sec-body">
+      <p>A brain beside another memory store that loads by itself guarantees a contradiction nobody sees: both are read into every session and the one that loads first wins, whichever is right.</p>
+      <p><code>init</code> looks for one in both places it lives: a <code>MEMORY.md</code> or <code>memory/</code> directory in the project and Claude Code's own auto-memory outside the repository under <code>~/.claude/projects/&lt;slug&gt;/memory/</code>. When it finds one it says so. It never moves, rewrites or deletes it, because your own memory files are not <code>init</code>'s to destroy.</p>
+      <p>If you want a committed, readable copy of what the brain holds, generate it with <code>os-brain snapshot --out MEMORY.md</code>. It carries a DO NOT EDIT header: edit the brain and regenerate, never the other way round.</p>
+    </div>
+  </div>
+</section>
+
+<section class="banded">
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">06 / What we leave alone</div>
+      <h2>Your CLAUDE.md<br>stays <em>yours</em>.</h2>
+    </div>
+    <div class="obs sec-body">
+      <p>A project's own top-level instructions belong to the project. How to build it, how to run the tests and the conventions of the codebase are stable and they belong in that file, written by you.</p>
+      <p><code>init</code> reads <code>CLAUDE.md</code> for one reason: to tell you when it still carries the "Project memory" section an older install appended. The hook now carries that text, so the section is redundant. <code>init</code> says so and leaves the deleting to you.</p>
+      <p>What belongs in the brain is everything that changes or gets corrected: why an approach was turned down, what broke last time, a limit that is in no file, a preference you stated once. Those are the lines that go stale in a markdown file without anyone noticing.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">07 / Go and check yours</div>
+      <h2>Five lines.<br>Against the <em>code</em>.</h2>
+    </div>
+    <div class="obs sec-body">
+      <p>Open your <code>CLAUDE.md</code>, your <code>AGENTS.md</code> or your <code>.cursorrules</code>. Pick five lines you can check: a file path, a count, a command name, a directory, a version number. Check each one against the code.</p>
+      <p>A file meant to save the agent from reading the code can only be checked by reading the code. If one of your five was wrong, every session since has loaded it with full confidence.</p>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>Try the other <em>thing</em>.</h2>
+<pre>$ <span class="g">go install github.com/chka/os-brain/cmd/os-brain@latest</span>
+<span class="c"># then, in the project you want it to remember</span>
+$ <span class="g">os-brain init</span></pre>
+    <div class="cta-row">
+      <a href="install.html" class="btn btn-solid">Install</a>
+      <a href="concepts.html" class="btn btn-ghost">How the memory model works</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

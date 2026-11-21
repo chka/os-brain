@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The user model</title>
+<meta name="description" content="How os-brain learns how you want to be worked with: prefer, the captured prompts, the ladder from stated to law, objections and whoami. What is kept, for how long and where.">
+<link rel="canonical" href="https://chka.github.io/os-brain/mind.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Docs · the user model</div>
+    <h1>How you want<br>to be worked <em>with</em>.</h1>
+    <p class="lede">The most valuable thing a brain learns is said once, in passing, usually as a correction. The next session has lost it unless something wrote it down. This page covers the parts of os-brain that hold on to it and the limits each one keeps.</p>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="toc">
+    <div class="t">On this page</div>
+    <a href="#prefer">Preferences</a>
+    <a href="#when">When to store one</a>
+    <a href="#capture">Your exact words</a>
+    <a href="#classes">How a prompt is sorted</a>
+    <a href="#kept">What is kept and for how long</a>
+    <a href="#ladder">The ladder: stated, hardened, law</a>
+    <a href="#object">Disagreeing with a memory</a>
+    <a href="#whoami">whoami</a>
+    <a href="#where">Where each part lives</a>
+  </aside>
+
+  <main class="doc-body">
+
+    <h2 id="prefer">Preferences <a class="anchor" href="#prefer">#</a></h2>
+<pre>$ <span class="g">os-brain prefer "answers first, reasoning after" --confirmed \
+    --why "said so when a reply opened with background"</span>
+<span class="o">remembered #6 [global/preference] answers first, reasoning after</span>
+
+$ <span class="g">os-brain prefer "send the weekly totals to Maria as a PDF, never a spreadsheet" \
+    --about Maria --why "she forwards it to the accountant"</span>
+<span class="o">remembered #10 [global/relationship] send the weekly totals to Maria as a PDF, never a spreadsheet</span></pre>
+    <p><code>prefer</code> is <code>remember</code> with the fields already filled in, because friction is the reason preferences never get written down. It stores a <code>preference</code> at importance 4 with today as the source date and <code>"stated by the user"</code> as the source. <code>--about &lt;person&gt;</code> files it as a <code>relationship</code> instead (put the person's name in the text, since the type is what changes). <code>--confirmed</code> records that they said it outright, <code>--why</code> becomes the body and <code>--pin</code>, <code>--scope</code>, <code>--importance</code>, <code>--supersedes</code> and <code>--update</code> work as they do on <code>remember</code>.</p>
+    <p>Preferences and relationships go into the brief under HOW THEY WANT TO WORK, up to eight of them by importance and recency, ahead of guardrails and pinned facts. They are tier C, so in an ordinary search they fade over about two months. The brief ignores that fading. A preference stays in front of every session until it is replaced or pushed out of the eight by more important ones.</p>
+<pre>## HOW THEY WANT TO WORK
+  #6 [preference] [confirmed] answers first, reasoning after
+     said so when a reply opened with background</pre>
+    <p>A preference that is a hard boundary rather than a taste belongs in a guardrail: <code>remember --type constraint</code> (or <code>policy</code>) puts it in every brief and makes <code>forget</code> ask for <code>--force</code>.</p>
+
+    <h2 id="when">When to store one <a class="anchor" href="#when">#</a></h2>
+    <p>The moment it is said, not at the end of the session. Sessions get compacted and killed mid-task and a preference the agent meant to write later does not survive that. The signs are plain enough:</p>
+    <ul>
+      <li>a correction of how something was done ("don't do X", "stop doing Y")</li>
+      <li>a standing rule ("from now on", "always", "never")</li>
+      <li>taste ("I prefer", "I hate it when")</li>
+      <li>a pattern across turns, such as always wanting the diff first</li>
+    </ul>
+    <p>The per-prompt hook watches for this language and reminds the agent. The reminder only fires on clear phrasing, at most once every 15 minutes in a session and not when a stored preference already says much the same thing:</p>
+<pre><span class="o">[brain] that reads like a standing preference, not a one-off. If it is, store it now: os-brain prefer "&lt;the rule in their words&gt;" --why "&lt;what prompted it&gt;"</span></pre>
+    <p>It is a backstop. The agent is the mechanism and the reminder only catches what the agent missed.</p>
+
+    <h2 id="capture">Your exact words <a class="anchor" href="#capture">#</a></h2>
+    <p>Every message you type is stored verbatim before the agent answers. The UserPromptSubmit hook (<code>os-brain hook-recall</code>) does it on each turn, because that is the only moment the exact words are still there. Everything after it depends on the model choosing to write something down.</p>
+<pre>$ <span class="g">os-brain utterances</span>
+<span class="o">#4 2026-11-20 [taste] I hate it when the summary repeats the question
+#3 2026-11-20 [command] run the tests
+#2 2026-11-20 [directive] from now on always show me the diff before you deploy
+#1 2026-11-20 [command] no, I care about the totals being right, not the layout</span>
+
+$ <span class="g">os-brain utterances --class directive</span>   <span class="c"># command | taste | directive | exhibit</span>
+$ <span class="g">os-brain utterances --unclassified</span>      <span class="c"># what was not sorted at all</span>
+$ <span class="g">os-brain utterances -n 50</span>
+$ <span class="g">os-brain capture "from now on always show me the diff before you deploy"</span>   <span class="c"># by hand</span>
+<span class="o">captured #2 as a directive (cue:from now on). Say it again in another session and it becomes law.</span></pre>
+    <p>Together they answer a question that would otherwise need a transcript: what did they ask for in their own words, as opposed to what the session decided they meant. <code>capture</code> exists mainly for the hook and stays silent on an ordinary turn. A command that announced itself on every message would be one people mute.</p>
+
+    <h2 id="classes">How a prompt is sorted <a class="anchor" href="#classes">#</a></h2>
+    <p>Each captured prompt gets one of four classes and the cue that decided it, so a reader can check the reason rather than trust the label.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Class</th><th>What puts a prompt there</th></tr>
+      <tr><td>exhibit</td><td>Something shown rather than said: a fenced code block, a quoted line starting with <code>&gt;</code>, "for example" or "someone said". Checked first.</td></tr>
+      <tr><td>directive</td><td>A narrow list of literal cues: "from now on", "always", "never", "every time", "whenever", "by default", "make sure you", "I want you to".</td></tr>
+      <tr><td>taste</td><td>"I like", "I love", "I hate", "I prefer", "I can't stand".</td></tr>
+      <tr><td>command</td><td>Everything else, which is most prompts.</td></tr>
+    </table>
+    </div>
+    <p>The sorting leans towards "not a rule" at every step and the reason is an asymmetry. Storing a one-off as a rule rewrites every future session and looks the same afterwards as a rule you really stated. Missing a rule costs one restatement. Exhibit comes first for the same reason: a pasted transcript with somebody else's "always do X" in it must never become your standing rule.</p>
+    <p>Classification is English only. A prompt in another script is stored with no class and <code>utterances</code> counts how many there were, so the limit is visible instead of quietly patched over with a half-tuned matcher.</p>
+
+    <h2 id="kept">What is kept and for how long <a class="anchor" href="#kept">#</a></h2>
+    <ul>
+      <li><b>Up to 8000 characters per prompt.</b> A whole paragraph or a short paste fits. An unbounded row would let one pasted log dominate every later scan.</li>
+      <li><b>30 days.</b> <code>"utterance_days": N</code> in <code>brain.json</code> changes it. A prompt that a memory was distilled from stays as that memory's provenance.</li>
+      <li><b>Never anything shaped like a credential.</b> The hook refuses it and there is no <code>--allow-secret</code> override, because nobody is on the other end of a hook to ask.</li>
+      <li><b>In cleartext, in the local store.</b> Captured prompts appear in <code>export</code>, <code>backup</code> and <code>snapshot</code> output and travel with the brain like everything else in it. They never leave the machine on their own.</li>
+    </ul>
+    <p>There is no per-message opt-out. The only way to stop capture is not to wire the hook: <code>os-brain init --no-auto-recall</code>, which turns off automatic recall on each prompt as well. <code>init</code> says this when it wires the hook.</p>
+
+    <h2 id="ladder">The ladder: stated, hardened, law <a class="anchor" href="#ladder">#</a></h2>
+    <p>Repetition is authority. Every memory has a place on a ladder that the brain works out from what it can already see, never from anyone's say-so:</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>State</th><th>How a memory gets there</th></tr>
+      <tr><td>stated</td><td>Saved once. A position, open to discussion.</td></tr>
+      <tr><td>hardened</td><td>Saved again after an objection was recorded against it. The objection keeps its date and its reasoning.</td></tr>
+      <tr><td>law</td><td>Saved again from a different session than the one that last stated it. A second session agreeing counts. The same session repeating itself does not.</td></tr>
+    </table>
+    </div>
+    <p>"Saved again" means a <code>remember</code> or <code>prefer</code> with the same title in the same scope, which refines the memory in place and moves the ladder:</p>
+<pre>$ <span class="g">os-brain prefer "answers first, reasoning after"</span>   <span class="c"># a later session</span>
+<span class="o">updated existing memory #6 (same title in global)
+  ladder: law (stated 3x) - restated in a different session: law. Only the user can reopen it.</span>
+
+$ <span class="g">os-brain ladder 6</span>
+<span class="o">#6 is law, stated 3x
+  current state: law.</span></pre>
+    <p>Each state is recorded once with its date and nothing lowers it. A session with no session id never promotes anything to law, since a missing id compared with a stored one would always look like a different session.</p>
+    <p>The ladder is there for the agent. A session that finds a fact disputed treats it as an open question. One that finds it settled as law stops arguing it. It does not change how a memory ranks in recall or whether it goes into the brief.</p>
+
+    <h2 id="object">Disagreeing with a memory <a class="anchor" href="#object">#</a></h2>
+<pre>$ <span class="g">os-brain object 1 --why "measured the opposite on staging today: the app terminates TLS itself there"</span>
+<span class="o">objection recorded against #1
+  it is stated (stated 1x)
+  objection recorded. A restatement after this will harden the memory.</span>
+
+$ <span class="g">os-brain ladder 1</span>
+<span class="o">#1 is stated, stated 1x
+  current state: stated.
+  objected 2026-11-20: measured the opposite on staging today: the app terminates TLS itself there</span></pre>
+    <p>An objection deletes nothing and supersedes nothing. It records that somebody disagreed and why, so the next session sees the disagreement instead of inheriting the claim unopposed. <code>--why</code> is required because the reasoning outlasts the verdict. A memory that is already law still takes the objection, since people may still disagree. It just cannot reopen the memory.</p>
+    <p>Use <code>--supersedes</code> for a fact that changed. Use <code>object</code> for one that may never have been right.</p>
+
+    <h2 id="whoami">whoami <a class="anchor" href="#whoami">#</a></h2>
+<pre>$ <span class="g">os-brain whoami --observe sources="reads primary sources"</span>
+<span class="r">Observe 'sources': evidence is required &mdash; a trait with no evidence is the bare score this model refuses to store</span>
+
+$ <span class="g">os-brain whoami --observe sources="reads primary sources" \
+    --evidence "asked for the RFC rather than a summary, twice"</span>
+<span class="o">sources            reads primary sources
+    because: asked for the RFC rather than a summary, twice
+
+Wrong? os-brain whoami --forget &lt;key&gt;. It is a measurement, not a verdict.</span>
+
+$ <span class="g">os-brain whoami --forget sources</span>
+<span class="o">dropped 'sources'</span></pre>
+    <p>The user model is a short list of traits, each a <code>key=value</code> with the evidence that produced it. Every trait needs evidence. A picture of a person built from guesses with no citation is a pile of assumptions nobody can push back on, while this one can be challenged line by line. Observing a key again replaces it: the model holds the current read on a person, not a log of every time it changed its mind. <code>--forget</code> takes the key, not the phrase.</p>
+    <p>You see it only when you ask. It never goes into the brief, because a brief that opens by describing the person reading it is unpleasant and a wrong assessment reads as condescension.</p>
+
+    <h2 id="where">Where each part lives <a class="anchor" href="#where">#</a></h2>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Part</th><th>Stored in</th><th>Why there</th></tr>
+      <tr><td>preferences, relationships</td><td>the project's brain</td><td>They are memories, with types, scopes and history like any other.</td></tr>
+      <tr><td>captured prompts</td><td>the project's brain</td><td>They are what was said in this project, kept 30 days.</td></tr>
+      <tr><td>objections and ladder state</td><td>the project's brain, beside the memory</td><td>They belong to one memory.</td></tr>
+      <tr><td>whoami traits</td><td>the shared store, <code>~/.claude/os-brain/brain.db</code></td><td>The person is the same in every project. Filing traits per project would mean learning them again in every repository and would let two projects disagree about who you are.</td></tr>
+    </table>
+    </div>
+    <p>None of it leaves the machine. Traits are never published as a lesson or copied anywhere else, since a profile of a person stops being safe to keep the moment it is treated as shareable content. <a href="sharing.html">One machine, several projects</a> explains the shared store.</p>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

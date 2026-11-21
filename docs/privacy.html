@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain · privacy</title>
+<meta name="description" content="This website has no analytics and sets no cookies. The os-brain binary has no telemetry and no update check.">
+<link rel="canonical" href="https://chka.github.io/os-brain/privacy.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" style="padding-bottom:0;">
+  <div class="wrap">
+    <div class="stagger">
+      <div class="kicker">Privacy</div>
+      <h1>What gets<br><em>recorded</em> and where.</h1>
+      <p class="lede">Two separate things: this website and the binary. The website is a set of static pages. The binary makes no network call of its own.</p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" style="padding-top:0;padding-bottom:100px;">
+  <main class="doc-body" style="max-width:46em;">
+
+    <h2 id="site">This website</h2>
+    <p>These pages are static files served by GitHub Pages from the <code>docs/</code> folder of <a href="https://github.com/chka/os-brain">the repository</a>. You can read every one of them there.</p>
+    <p>We run no analytics and no tracker. There is no page script of ours that reports anything, no advertising and no third-party embed. The only script on a page fades sections in as you scroll and talks to nobody. The typefaces are served from this site too.</p>
+    <p><b>No cookies of ours.</b> The site sets no cookie and stores nothing in your browser, so there is nothing to consent to and no banner.</p>
+    <p>GitHub serves the pages, so GitHub receives the request for each one, as any web host does: your IP address, the page and your browser's user agent. We don't see those logs and have no access to them. GitHub's own privacy statement covers what it keeps.</p>
+
+    <h2 id="binary">The binary</h2>
+    <p>os-brain has no telemetry, no update check and no account. It never calls home. Nothing leaves your machine unless you run a command that sends it somewhere.</p>
+    <ul>
+      <li><b>Your memories</b> stay in <code>brain/brain.db</code> in each project and in the shared store at <code>~/.claude/os-brain/brain.db</code>. Both are SQLite files, readable only by you (mode 600). <code>init</code> adds the project database to <code>.gitignore</code>.</li>
+      <li><b>Your prompts</b> are stored by the per-prompt hook, word for word up to 8000 characters, for 30 days, in the same local database. Text that looks like a credential is refused. <code>os-brain utterances</code> lists them and <code>os-brain init --no-auto-recall</code> turns the hook off. <a href="install.html#capture">The install page</a> has the details.</li>
+      <li><b>Safety copies</b> are written to a <code>backups</code> directory beside the shared store, mode 600, never inside the working tree.</li>
+      <li><b>The web UI</b> (<code>os-brain ui</code>) listens on 127.0.0.1 by default and only while you run it.</li>
+      <li><b>The MCP server</b> (<code>os-brain mcp</code>) runs on stdio unless you give it <code>--http</code>. Off loopback it needs a certificate and a token. <a href="mcp.html">The MCP page</a> covers the rules.</li>
+    </ul>
+    <p>Two things can run a command you wrote yourself: a probe declared in <code>brain.json</code> to run at session open and a <code>backups.push</code> command that copies a safety copy elsewhere. Each one has to be approved on each machine before it runs, because <code>brain.json</code> is committed and a cloned repository must not run a stranger's command. What they send and where is up to the command you wrote.</p>
+    <p>Your agent is a separate program. The brief and the memories recall returns go into its context, so they reach whatever model provider that agent uses. That is the agent's traffic, under the agent's own terms.</p>
+
+    <h2 id="contact">Questions</h2>
+    <p>Open an issue at <a href="https://github.com/chka/os-brain/issues">github.com/chka/os-brain/issues</a>. Issues are public, so leave out anything private.</p>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

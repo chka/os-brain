@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain · memory that outlives the session</title>
+<meta name="description" content="Open source project memory for coding agents. One static Go binary over SQLite. A session-start hook puts what the project knows into context before the first turn.">
+<link rel="canonical" href="https://chka.github.io/os-brain/">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" style="padding-bottom:24px;">
+  <div class="wrap hero-grid">
+    <div class="stagger">
+      <div class="kicker">Memory for coding agents</div>
+      <h1>Your agent relearns<br>your project <em>every</em><br>single morning.</h1>
+      <p class="lede">It re-reads the same files, works out again the decision you made last Tuesday and asks a question you already answered. Scrollback is not memory: it dies at compaction and again when the session ends. <b>os-brain is the memory that survives both.</b> A new session opens with a short brief, <a href="#brief" class="brief-ptr">like this one</a>. Then, as you work, your agent is reminded only of what it learned that bears on the task in front of it. Months of memory and the context stays light.</p>
+      <div class="cta-row">
+        <a href="install.html" class="btn btn-solid">Install</a>
+        <a href="how-it-works.html" class="btn btn-ghost">How it works</a>
+      </div>
+      <p class="faint" style="font-family:var(--mono);font-size:12.5px;margin-top:24px;line-height:1.8;">One binary. SQLite underneath. No daemon and no account.<br>No telemetry and no update check. MIT licence.</p>
+    </div>
+
+    <div class="card" id="brief">
+      <div class="card-head">
+        <span class="name">session start · before your first turn</span>
+        <span class="tagline"><span class="glow"></span>injected by a hook</span>
+      </div>
+<pre style="margin:0;border:0;background:transparent;padding:0;font-size:12.8px;"><span class="c"># the orchard project's brief, trimmed</span>
+  now      <span class="o">2026-11-20 09:12 GMT (Friday morning)</span>
+  git      <span class="o">main · f265c12 billing: void keeps
+           number · clean</span>
+  brain    <span class="o">LOCAL FILE · brain/brain.db</span>
+
+<span class="g">## HOW THEY WANT TO WORK</span>
+  <span class="o">#3 [preference] run the tests before every
+     commit, without asking
+     said so twice</span>
+
+<span class="g">## GUARDRAILS (binding, always shown)</span>
+  <span class="o">#2 [constraint] [never verified] No schema
+     change ships without a migration that
+     reverses it</span>
+  <span class="o">#1 [constraint] [never verified] An invoice
+     number is never reused, not even after
+     a void</span>
+
+<span class="g">## DUE NOW</span>
+<span class="r">[ ] #1</span>   <span class="o">rotate the payment webhook secret before
+         the next billing run  (due 09:00, 12m ago)</span>
+
+<span class="g">## WHERE THINGS LIVE</span>
+  <span class="o">global 4 · deploy 1</span></pre>
+      <div class="card-foot">
+        <span>no prompt asked for this</span>
+        <span>a hook did it</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="monday" style="padding-top:24px;padding-bottom:32px;">
+  <div class="wrap">
+    <div class="obs" style="max-width:36em;margin-bottom:44px;">
+      <div class="sec-kicker">What you will notice</div>
+      <h2>Install it on Friday.<br>Notice on <em>Monday</em>.</h2>
+    </div>
+    <div class="grid g3 obs">
+      <div class="door">
+        <div class="tag">It arrives knowing</div>
+        <h3>No more first-day questions</h3>
+        <p>Your agent opens every session knowing what you decided, what broke last time and how you like to work. You stop answering the same question twice.</p>
+      </div>
+      <div class="door">
+        <div class="tag">Corrections stick</div>
+        <h3>Fix a fact once</h3>
+        <p>Correct it and the old version stops coming back. Ask in last month's wording and you get this month's answer, with a line saying which fact it replaced.</p>
+      </div>
+      <div class="door">
+        <div class="tag">Every repo</div>
+        <h3>Worked out once, found everywhere</h3>
+        <p>Keep your projects in one shared store and what you work out in one repository can be found from any other, whichever agent you have open. A project can also stay out of it.</p>
+      </div>
+      <div class="door">
+        <div class="tag">Lighter context</div>
+        <h3>Fewer tokens, less re-reading</h3>
+        <p>The brief is ranked and cut to 6000 bytes by default (about 1.5k tokens), with the binding rules first. Your agent asks the brain before it searches files, so it stops paying to work out again what an earlier session already found.</p>
+      </div>
+      <div class="door">
+        <div class="tag">Knows how you work</div>
+        <h3>Your habits, kept</h3>
+        <p>Say once how you like to work and what you never want. Every session starts with it, so you stop repeating yourself at the top of every chat.</p>
+      </div>
+      <div class="door">
+        <div class="tag">New projects too</div>
+        <h3>Day one follows your rules</h3>
+        <p>Axioms bind every project on the machine. A repository you created this morning opens its first session already knowing your ways of working.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="banded">
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">Your machine, your file</div>
+      <h2>Nothing leaves<br>the <em>machine</em>.</h2>
+    </div>
+    <div class="sec-body obs">
+      <p>Each project keeps its memories in <code>brain/brain.db</code>, a SQLite file readable only by you and listed in <code>.gitignore</code> so it never lands in the repository. There is no server to run and no account to make.</p>
+      <p>os-brain never calls home. There is no telemetry and no update check. The only network code in the binary serves the web UI and the MCP server. Both run only when you start them. <a href="privacy.html">What this site and the binary record</a>.</p>
+      <p>The code is on <a href="https://github.com/chka/os-brain">GitHub</a> under the MIT licence. The storage format is the same one ns-brain uses, so a brain can <a href="editions.html">move to the team edition</a> and back without losing a memory.</p>
+    </div>
+  </div>
+</section>
+
+<section class="final" style="padding-top:48px;">
+  <div class="wrap">
+    <div class="obs">
+      <h2>The more you use it,<br>the <em>better</em> it gets.</h2>
+      <p>Free and open source, for one developer on as many projects as you like. You need Go 1.26 or newer.</p>
+<pre>$ <span class="g">go install github.com/chka/os-brain/cmd/os-brain@latest</span>
+$ <span class="g">cd ~/projects/yours && os-brain init</span></pre>
+      <div class="cta-row">
+        <a href="install.html" class="btn btn-solid">Install</a>
+        <a href="docs.html" class="btn btn-ghost">Read the docs</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain over MCP</title>
+<meta name="description" content="Every os-brain command as an MCP tool over stdio or Streamable HTTP: tokens, TLS, OAuth for hosted clients and the security rules the server enforces.">
+<link rel="canonical" href="https://chka.github.io/os-brain/mcp.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Docs · MCP</div>
+    <h1>Nearly every command<br>is a <em>tool</em>.</h1>
+    <p class="lede">You get nearly every command, not a hand-picked few. The only ones left out start a server, read their input from stdin or repeat another command under a second name. Each tool's inputs are built from the flags the command itself registers, so a new CLI flag shows up in MCP on the next build and the two never fall out of step. A tool call runs the same code the CLI runs, against the same memory.</p>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="toc">
+    <div class="t">On this page</div>
+    <a href="#why">Hooks or MCP?</a>
+    <a href="#transport">Which transport</a>
+    <a href="#stdio">stdio with Claude Code</a>
+    <a href="#project">Naming the project</a>
+    <a href="#http">HTTP, a client with no shell</a>
+    <a href="#oauth">OAuth for hosted clients</a>
+    <a href="#enforced">What the server checks</a>
+    <a href="#tools">The tools</a>
+    <a href="#inputs">The three extra inputs</a>
+    <a href="#person">What only a person can do</a>
+    <a href="#gives-up">What you lose with MCP</a>
+    <a href="#wrong">When it does not work</a>
+  </aside>
+
+  <main class="doc-body">
+
+    <h2 id="why">Hooks or MCP? <a class="anchor" href="#why">#</a></h2>
+    <p>An agent reaches a brain in three ways. Hooks bring the brain in without being asked: your client fires them, so the brief and the matching memories arrive whether or not the model thinks to look. Shell commands and MCP are how the agent asks the brain and writes to it. An agent with a shell types <code>os-brain</code> commands; MCP gives the same commands as tools, which is the only way in for an agent that cannot run a shell. All three run the same code against the same memory. Choose by what your client can do.</p>
+    <div class="table-scroll">
+    <table class="cols-20-40-40">
+      <tr><th></th><th>Hooks and the CLI</th><th>MCP</th></tr>
+      <tr><td>Who fires it</td><td>Your client, at session start, on every prompt and at the end. Nothing relies on the model remembering.</td><td>The model, when it decides to call a tool. The agent only gets what it asks for.</td></tr>
+      <tr><td>Needs</td><td>A client with hooks and a shell. <a href="agents.html">The agents page</a> lists them.</td><td>A client that speaks MCP, including ones with no shell.</td></tr>
+      <tr><td>Context cost</td><td>The brief once, then only what each prompt matches.</td><td>Every tool's schema in every session, used or not.</td></tr>
+      <tr><td>Flags</td><td>Whatever the agent types. A wrong flag gets a refusal that says the fix.</td><td>Typed inputs built from the same flags. The model cannot make one up.</td></tr>
+      <tr><td>Set up with</td><td><code>os-brain init</code></td><td><code>claude mcp add</code>, or the same settings in your client's own config file</td></tr>
+    </table>
+    </div>
+    <p>One machine and an agent with a shell: use hooks and nothing else. That is what <a href="install.html">the install page</a> sets up and it covers most people. An agent with no shell (the Claude app, a hosted agent, an IDE that runs no hooks) has MCP as its only choice. Use stdio when the client can start <code>os-brain mcp</code> on this machine and HTTP when it cannot. Either way, the model now decides when to read.</p>
+    <p>Both at once is fine and sometimes the right call: hooks for the brief up front, MCP for typed inputs. Just do not drop the hooks because MCP is connected. <a href="#gives-up">What you lose with MCP</a> explains why.</p>
+
+    <h2 id="transport">Which transport to use <a class="anchor" href="#transport">#</a></h2>
+    <p><b>stdio</b> if the brain is on the same machine as the agent. Your client starts <code>os-brain mcp</code> itself: no port, nothing to keep running, nothing to log in to. This is the usual case.</p>
+    <p><b>Streamable HTTP</b> if your client cannot start <code>os-brain mcp</code> itself.</p>
+<pre>$ <span class="g">os-brain mcp</span>                              <span class="c"># stdio, started by the client</span>
+$ <span class="g">os-brain mcp --http 127.0.0.1:7801</span>        <span class="c"># HTTP, endpoint /mcp, bearer token required</span>
+[brain] MCP on http://127.0.0.1:7801/mcp 127.0.0.1:7801 (loopback only) · 58 tools · protocol 2025-06-18
+[brain] no --token given, so this process minted one: it is in /home/you/.claude/os-brain/mcp-7801.token (mode 600) and every request needs "Authorization: Bearer &lt;it&gt;"</pre>
+    <p>The HTTP endpoint is <code>/mcp</code>. The root answers 404.</p>
+
+    <h2 id="stdio">stdio with Claude Code <a class="anchor" href="#stdio">#</a></h2>
+<pre>$ <span class="g">cd ~/src/yours</span>
+$ <span class="g">claude mcp add brain -s local \
+      -e OS_BRAIN_HOME=/home/you/src/yours/brain \
+      -e OS_BRAIN_PROJECT=yours \
+      -- os-brain mcp</span></pre>
+    <p><code>OS_BRAIN_HOME</code> is the brain directory, the one that holds <code>brain.json</code>. Without it the server looks for the brain from whatever directory it was started in. Your client makes no promise about which one that is. <code>OS_BRAIN_PROJECT</code> names the project, which the next section explains. <code>-s local</code> keeps the entry in your own config rather than a <code>.mcp.json</code> committed to the repository: for anyone on the repository without os-brain, a committed entry is a server that fails to start in every session.</p>
+    <p>Other clients take the same things in their own config file: the command <code>os-brain mcp</code>, the two environment variables and a name. The syntax differs and the content is the same.</p>
+
+    <h2 id="project">Name the project or it refuses <a class="anchor" href="#project">#</a></h2>
+    <p>MCP does not tell the server which directory your client is in. When the server fronts a shared store that holds several projects, it cannot work out which one you mean. So it does not guess:</p>
+<pre>this server fronts a shared brain, so it cannot tell which project you are working in: pass _project.
+  already here: billing-api, ops-runbooks, orchard, orchard-web
+Use the name this project calls itself. A project new to this brain simply names itself, and its first write creates it.
+A client can also declare it once in its own config, with an X-Brain-Project header, instead of passing it every call.</pre>
+    <p>That refusal is what you want. Without it the server would use its own name and every project's memories would end up filed under that one name, with no warning. There are three ways to answer it:</p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Where</th><th>How</th><th>When</th></tr>
+      <tr><td>Config, stdio</td><td><code>OS_BRAIN_PROJECT=yours</code> in the server's env</td><td>Always, for stdio</td></tr>
+      <tr><td>Config, HTTP</td><td><code>X-Brain-Project: yours</code> header</td><td>Always, for HTTP</td></tr>
+      <tr><td>Per call</td><td><code>_project</code> argument on any tool</td><td>When you mean to reach another project</td></tr>
+    </table>
+    </div>
+    <p>Put it in config. Config cannot forget and a model can. A brain with only one project needs none of this: it already knows which project it is. A private project is never offered by name in the list.</p>
+
+    <h2 id="http">HTTP, for a client with no shell <a class="anchor" href="#http">#</a></h2>
+<pre><span class="c"># serve the brain</span>
+$ <span class="g">OS_BRAIN_HOME=/home/you/src/yours/brain OS_BRAIN_MCP_TOKEN="$TOKEN" \
+      os-brain mcp --http 127.0.0.1:7801</span>
+
+<span class="c"># point the client at it, through a proxy that terminates TLS</span>
+$ <span class="g">claude mcp add brain -s user -t http https://brain.example.com/mcp \
+      -H "Authorization: Bearer $TOKEN" \
+      -H "X-Brain-Project: yours"</span></pre>
+    <p>The token can come from <code>--token</code> or from <code>OS_BRAIN_MCP_TOKEN</code>. The variable keeps it off the command line, where any user on the machine can read it with <code>ps</code>. A flag wins.</p>
+    <p>Bind to loopback and put a proxy with TLS in front. If the proxy passes its public name through as Host, name it with <code>--allow-host brain.example.com</code>; any other Host is refused. Or let the binary serve TLS itself:</p>
+<pre>$ <span class="g">OS_BRAIN_MCP_TOKEN="$TOKEN" os-brain mcp --http 0.0.0.0:7801 \
+      --tls-cert /etc/os-brain/cert.pem --tls-key /etc/os-brain/key.pem</span></pre>
+    <p>TLS 1.2 is the minimum. On any address other than loopback the binary will not start without both a certificate and a token. No flag overrides that:</p>
+<pre>$ <span class="g">os-brain mcp --http 0.0.0.0:7801</span>
+refusing to listen on 0.0.0.0:7801 without TLS.
+Off loopback this endpoint would send the token and every memory in the brain in cleartext. Pass --tls-cert and --tls-key, or bind 127.0.0.1 behind a proxy that terminates TLS</pre>
+    <p>A firewall decides who can reach a port. It does nothing about who can read what passes through it, which is why an IP allow-list is no substitute for TLS. An empty host such as <code>:7801</code> binds every interface and is treated as off loopback.</p>
+
+    <h2 id="oauth">OAuth for hosted clients <a class="anchor" href="#oauth">#</a></h2>
+    <p>A hosted client that cannot be given a bearer token (above all the Claude app's custom connectors) needs OAuth instead. <code>--public-url</code> mounts a small authorization server inside the binary: discovery documents, dynamic client registration, PKCE with S256, tokens bound to this server's URL and rotated refresh tokens. The token you pass becomes the password on its login page and stops working as a bearer at <code>/mcp</code>, so it can only be tried where wrong guesses are counted.</p>
+<pre>$ <span class="g">os-brain mcp --http 127.0.0.1:7801 \
+      --public-url https://laptop.your-tailnet.ts.net \
+      --oauth-redirect-host claude.ai --token "$TOKEN"</span>
+[brain] OAuth for hosted clients at https://laptop.your-tailnet.ts.net: add https://laptop.your-tailnet.ts.net/mcp as a connector and type the token on the login page. /mcp takes only the tokens that login issues, not --token itself</pre>
+    <p><code>--public-url</code> refuses a plain http URL and refuses to run without a token. <code>--oauth-redirect-host</code> is refused without <code>--public-url</code>, since it would do nothing. <a href="phone.html">The phone page</a> walks through the whole setup.</p>
+
+    <h2 id="enforced">What the server checks <a class="anchor" href="#enforced">#</a></h2>
+    <p>All of this follows the security section of the MCP transport spec. None of it can be switched off.</p>
+    <ul>
+      <li><b>Host and Origin are checked.</b> Each is parsed and compared in full against the loopback names, so a web page cannot drive a server on localhost, by DNS rebinding or any other way. A request that sends an Origin must match: <code>--origin</code> replaces the loopback default with a comma-separated list, or <code>*</code>. Host is checked on a loopback bind and whenever <code>--allow-host</code> or <code>--public-url</code> names a host. Either refusal is a 403.</li>
+      <li><b>A POST must be <code>Content-Type: application/json</code></b>, which a web page cannot send to another site without asking first. Anything else is a 415.</li>
+      <li><b>Every request needs a bearer token, loopback included.</b> It goes in <code>Authorization: Bearer &lt;token&gt;</code> and is compared in constant time. Without <code>--token</code> a loopback server mints a new one each time it starts and writes it to <code>mcp-&lt;port&gt;.token</code> (mode 600) beside the shared store, usually <code>~/.claude/os-brain/</code>. Loopback keeps out other machines, not the other users and processes on this one.</li>
+      <li><b>Wrong tokens are counted per source address.</b> After five, that address waits: a minute at first, doubling up to an hour, with 429 and a <code>Retry-After</code> until then. While it waits nothing is compared, so a lockout cannot be used to test guesses. A separate ceiling across all addresses (100 failures in 15 minutes) stops a guess spread over many of them; one address cannot reach it alone. Behind a proxy on loopback, the last address in <code>X-Forwarded-For</code> is the source.</li>
+      <li><b>Off loopback, TLS or nothing.</b></li>
+      <li><b>Sessions.</b> The initialize response returns an <code>Mcp-Session-Id</code> and every later request carries it. An id the server does not know gets 404 with "session not found; re-initialize", which you see after a restart because sessions live in memory; a client that follows the spec initializes again by itself. A request with no id gets 400 once any session exists. DELETE ends a session.</li>
+      <li><b>GET returns 405.</b> Nothing here runs long or streams, so an idle stream would serve no purpose.</li>
+      <li><b>Protocol 2025-06-18</b>, with 2025-03-26 also accepted. An <code>MCP-Protocol-Version</code> header naming anything else gets 400.</li>
+      <li><b>Request bodies are capped at 16MB.</b></li>
+    </ul>
+
+    <h2 id="tools">The tools <a class="anchor" href="#tools">#</a></h2>
+    <p>Each command becomes a tool called <code>brain_&lt;command&gt;</code>, with hyphens turned into underscores, so <code>hook-stop</code> is <code>brain_hook_stop</code>. The list is generated from the CLI at startup. This build serves 58:</p>
+<pre>brain_absorb brain_axiom brain_backup brain_bootstrap brain_brief brain_capture brain_context
+brain_coverage brain_describe brain_dm brain_doctor brain_env brain_events brain_export
+brain_forget brain_get brain_global brain_help brain_history brain_hook_stop brain_import
+brain_init brain_kind brain_ladder brain_lead brain_log brain_map brain_measure brain_note
+brain_object brain_open brain_prefer brain_private brain_promote brain_prune brain_publish
+brain_recall brain_reindex brain_relabel brain_release brain_remember brain_restore
+brain_review brain_scope brain_sessions brain_share brain_snapshot brain_standard brain_stats
+brain_task brain_uninstall brain_update brain_utterances brain_vacuum brain_verify
+brain_version brain_wakeup brain_whoami</pre>
+    <p>A few commands are left out on purpose. <code>mcp</code>, <code>ui</code> and <code>channel</code> each start a server and run until killed, so an agent that called one would hang its own session. <code>hook-recall</code>, <code>hook-tool</code>, <code>hook-end</code> and <code>plugin-hook</code> read their input from stdin. Over stdio, stdin is the channel MCP itself runs on: calling one as a tool deadlocked the connection instead of failing. <code>hook-stop</code> reads no stdin, so it stays. <code>outstanding</code> and <code>status</code> are other names for <code>open</code>; a model picking from a list does not need the same tool three times.</p>
+    <p>A tool call builds the same command line you would type and runs it through the normal CLI code, so guards, refusals and output are that code, not a copy. A refusal comes back as a tool error the model can read rather than a protocol fault. Every tool that can remove or overwrite something (<code>forget</code>, <code>prune</code>, <code>import</code>, <code>restore</code>, <code>absorb</code>, <code>vacuum</code>, <code>relabel</code>, <code>update</code>, <code>task</code>, <code>share</code>, <code>private</code>, <code>whoami</code> and <code>uninstall</code>) is marked destructive in its annotations. It is marked by its worst case even when the default is a dry run, so a client can ask a human first; its own guards stay just as strict either way. <code>wakeup</code> is marked open-world, because it runs commands the project declared.</p>
+
+    <h2 id="inputs">Every tool has three extra inputs <a class="anchor" href="#inputs">#</a></h2>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Input</th><th>What it carries</th></tr>
+      <tr><td>args</td><td>Positional arguments as one string, exactly as they would follow the command in a shell: a recall query, an id, a subcommand such as <code>add</code> or <code>list</code>. An array is refused rather than flattened into text.</td></tr>
+      <tr><td>_project</td><td>The project this session is working in. It wins over the header and the environment.</td></tr>
+      <tr><td>_session</td><td>Who is calling, separate from which project. Each memory records the session that saved it. It defaults to the MCP connection, so two unnamed clients are still told apart. The header version is <code>X-Brain-Session</code>.</td></tr>
+    </table>
+    </div>
+    <p>Everything else is the command's own flags, named as on the CLI. <code>json: true</code> returns the machine-readable envelope instead of the text meant for people. For <code>recall</code> that matters: a miss returns nothing rather than the whole scope, so anything acting on the results has to check <code>matched</code> first.</p>
+
+    <h2 id="person">What only a person can do <a class="anchor" href="#person">#</a></h2>
+    <p>Some calls are refused over MCP whatever you pass, because a person should make them at a terminal. Each refusal names the command for the person to run:</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Refused</th><th>Why</th></tr>
+      <tr><td>axiom and standard <code>add</code>, <code>edit</code>, <code>rm</code></td><td>Every project reads an axiom as a house rule.</td></tr>
+      <tr><td>release</td><td>It is announced in every project's brief.</td></tr>
+      <tr><td>wakeup trust</td><td>Approving a probe approves code to run on this machine.</td></tr>
+      <tr><td>wakeup add, rm (over HTTP)</td><td>Probes are commands this machine runs. A remote caller does not get to edit them.</td></tr>
+      <tr><td>dm --accept</td><td>It releases another person's instruction into this session.</td></tr>
+      <tr><td>relabel --claim, backup --whole-store</td><td>Not in the schemas at all: one hands a project's name to a directory, the other writes every project in a shared store.</td></tr>
+      <tr><td>--body -</td><td>A body cannot come from stdin over MCP. Pass the text itself.</td></tr>
+    </table>
+    </div>
+<pre>wakeup trust is refused over MCP: approving a probe approves code to run on this machine, a person's decision made at a terminal. Ask the person to run `os-brain wakeup trust` themselves</pre>
+    <p>A file the server would read (<code>--body-file</code>, <code>import</code>, <code>absorb</code>, <code>backup --restore</code>) must resolve inside the project over MCP, because the caller may not be on this machine.</p>
+
+    <h2 id="gives-up">What you lose with MCP <a class="anchor" href="#gives-up">#</a></h2>
+    <p><code>os-brain init</code> wires session hooks. One fires before your first turn and puts the brief in front of the agent. Another matches each prompt against the brain and adds what it finds. Neither waits for the agent to decide to look.</p>
+    <p>MCP has nothing like that. When a client connects, the server hands it a short set of instructions (read the brain before searching files, write to it before finishing, check <code>matched</code> on a recall) and says where the brain is: which file, which machine and which project. After that the model decides whether to read it. Anything that relies on being remembered will one day be forgotten. So use both where you can: hooks for the brief, MCP for reach.</p>
+
+    <h2 id="wrong">When it does not work <a class="anchor" href="#wrong">#</a></h2>
+    <div class="table-scroll">
+    <table>
+      <tr><th>What you see</th><th>What it means</th></tr>
+      <tr><td>404 on every request</td><td>The endpoint is <code>/mcp</code>. Nothing is served at the root.</td></tr>
+      <tr><td>401</td><td>No token or the wrong one. Without <code>--token</code>, read the minted one from the file named on stderr.</td></tr>
+      <tr><td>"this server fronts a shared brain"</td><td>No project set. Set <code>OS_BRAIN_PROJECT</code> or the header.</td></tr>
+      <tr><td>Memories under the wrong project</td><td>A project was set with the wrong name. <code>os-brain relabel</code> claims rows filed under another label.</td></tr>
+      <tr><td><code>memories=0</code> from a brain you know has some</td><td>Right server, wrong store. <code>brain_stats</code> prints the database path on its second line. A project with its own file is invisible to a server running on the shared store.</td></tr>
+      <tr><td>"missing Mcp-Session-Id"</td><td>The client did not send back the session id it got from initialize.</td></tr>
+      <tr><td>404 "session not found; re-initialize"</td><td>The server restarted and lost its sessions.</td></tr>
+      <tr><td>403 "host not allowed"</td><td>A proxy passes a public Host the server does not know. Name it with <code>--allow-host</code>.</td></tr>
+      <tr><td>"this server cannot tell which brain you mean" from Cline</td><td>Cline starts every MCP server from one shared process. Set <code>OS_BRAIN_HOME</code> (and <code>OS_BRAIN_PROJECT</code> on a shared store) in the server's env.</td></tr>
+      <tr><td>Refused to start on 0.0.0.0</td><td>No certificate or no token. Pass <code>--tls-cert</code>, <code>--tls-key</code> and <code>--token</code>, or bind loopback behind a proxy that handles TLS.</td></tr>
+      <tr><td>429 on every request</td><td>Too many wrong tokens from this address. Fix the token and wait for the time in <code>Retry-After</code>.</td></tr>
+    </table>
+    </div>
+    <p><a href="troubleshooting.html">More of these, including the CLI side.</a></p>
+
+  </main>
+</div>
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

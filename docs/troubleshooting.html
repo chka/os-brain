@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Troubleshooting</title>
+<meta name="description" content="The commands to run first, a brief that did not appear, recall that finds nothing, the wrong store, every common refusal and what it protects, doctor, safety copies and restoring a brain.">
+<link rel="canonical" href="https://chka.github.io/os-brain/troubleshooting.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Docs · troubleshooting</div>
+    <h1>When it says no,<br>it is usually <em>right</em>.</h1>
+    <p class="lede">Most of what looks like a bug is the brain refusing to guess. Each refusal below says what it protects. If you do not know why a guard is there you will find a way around it. Getting around these is how memories get lost.</p>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="toc">
+    <div class="t">On this page</div>
+    <a href="#first">Run these first</a>
+    <a href="#hooks">No brief at session start</a>
+    <a href="#empty">Recall returns nothing</a>
+    <a href="#wrong-store">Wrong store, wrong project</a>
+    <a href="#refusals">Refusals, explained</a>
+    <a href="#doctor">What doctor finds</a>
+    <a href="#copies">Safety copies</a>
+    <a href="#dumps">Export, import and snapshots</a>
+    <a href="#upgrades">New versions and the schema</a>
+    <a href="#undo">Undoing a mistake</a>
+    <a href="#report">Reporting a bug</a>
+  </aside>
+
+  <main class="doc-body">
+
+    <h2 id="first">Run these first <a class="anchor" href="#first">#</a></h2>
+<pre>$ <span class="g">os-brain env</span>       <span class="c"># the clock, the project, git and which file the brain is</span>
+$ <span class="g">os-brain stats</span>     <span class="c"># counts and the database path on line two</span>
+$ <span class="g">os-brain doctor</span>    <span class="c"># dangling links, loops, index drift, integrity</span>
+$ <span class="g">os-brain version</span>   <span class="c"># the build and the schema it writes</span>
+<span class="o">os-brain 26110501 (schema v16)</span></pre>
+    <p>Together those four answer almost every "it is not doing what I expected": which file, which project, which build and whether the brain is in good shape.</p>
+<pre>$ <span class="g">os-brain stats</span>
+<span class="o">memories=5 (pinned 0, superseded 1) [A2 B2 C1] scopes=1 events=6 leads=1 measures=4/1 keys (1 outside band) ...
+db=/home/you/.claude/os-brain/brain.db</span></pre>
+
+    <h2 id="hooks">The brief did not appear at session start <a class="anchor" href="#hooks">#</a></h2>
+    <p>First check the command works, then check the hook does. They break in different ways.</p>
+<pre>$ <span class="g">os-brain wakeup</span></pre>
+    <ul>
+      <li><b>It prints the brief.</b> The command is fine and the hook is not set up. Look in the agent's config (for Claude Code, <code>.claude/settings.json</code>) for entries whose command contains <code>os-brain</code>, or run <code>os-brain init</code> again. It replaces its own hooks instead of adding more and says "nothing to do" when everything is already in place.</li>
+      <li><b>It says no brain here.</b> There is no <code>brain.json</code> in this directory or any parent. Run it from inside the project, or set <code>OS_BRAIN_HOME</code> to the brain directory.</li>
+      <li><b>Command not found.</b> The binary is not on this shell's PATH. <code>go install</code> puts it in <code>$(go env GOPATH)/bin</code>, which is often not on PATH. Your agent's PATH can also differ from your terminal's, so check both.</li>
+      <li><b>It prints but the session still shows nothing.</b> Some agents load hooks only when a session starts. Open a brand new one.</li>
+      <li><b><code>init</code> said NOT WIRED.</b> It found no agent it could configure in this project and printed the exact snippet to add by hand instead of pretending. <code>os-brain init --agent claude</code> (or <code>codex</code>, <code>cursor</code> and the others) wires one by name. <a href="agents.html">The agents page</a> lists them.</li>
+    </ul>
+<pre>$ <span class="g">os-brain wakeup</span>   <span class="c"># outside any project</span>
+<span class="r">no brain here: /home/you/scratch and its parents hold no brain.json.</span>
+<span class="o">Run `os-brain init` in the project root to create one, or set OS_BRAIN_HOME to an existing brain directory.</span></pre>
+    <p>An agent that cannot run shell commands has no hooks at all. <a href="mcp.html">The MCP page</a> says what such an agent can still do.</p>
+
+    <h2 id="empty">Recall returns nothing <a class="anchor" href="#empty">#</a></h2>
+    <p>A script that searches with <code>recall --json</code> and matches nothing gets nothing back, never the closest thing or everything in the scope. That is on purpose: a script once fed a recall miss into <code>forget</code> and destroyed real memories. Try these, in order:</p>
+    <ul>
+      <li><b>Read the first line.</b> Plain recall (without <code>--json</code>) already shows the highest-scoring memories in scope when no memory shares your words and says so: <code>(no lexical match for '...'; showing the highest-scoring memories in scope)</code>. <code>--strict</code> turns that off. <code>--browse</code> turns it on for <code>--json</code>.</li>
+      <li><b>Use fewer, rarer words.</b> A long question can match only loosely. Two or three words that would appear in the memory itself work best.</li>
+      <li><b><code>os-brain coverage --near "&lt;topic&gt;"</code></b> comes at it from the other side: it shows what this project holds close to what you asked about.</li>
+      <li><b>Search a wider scope.</b> A recall inside <code>deploy:prod</code> never sees <code>deploy:staging</code>. A memory filed in a neighbouring branch is invisible from where you are.</li>
+      <li><b>Look elsewhere on purpose.</b> In a shared store, try <code>--all-projects</code>. For what other projects published, try <code>os-brain global --recall "&lt;topic&gt;"</code>.</li>
+      <li><b><code>os-brain reindex</code></b> if you can <code>get</code> a memory by id but cannot find it by searching. The full-text index has fallen out of step and <code>reindex</code> rebuilds it from the memories table.</li>
+    </ul>
+
+    <h2 id="wrong-store">Wrong store, wrong project <a class="anchor" href="#wrong-store">#</a></h2>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Symptom</th><th>What it is</th></tr>
+      <tr><td>0 memories in a brain you know has some</td><td>Right command, wrong file. <code>os-brain stats</code> prints the path. A project that moved into the shared store with <code>share</code> no longer reads its old <code>brain/brain.db</code> and the reverse is also true.</td></tr>
+      <tr><td><code>no memory #N in this project</code> for an id you can see</td><td>It belongs to another project in a shared store. Read it with <code>get N --all-projects</code> if that project is not private. Leave a note to change it.</td></tr>
+      <tr><td>Memories filed under another project's name</td><td>Something named the wrong project, usually over MCP. <code>os-brain relabel &lt;label&gt; --expect &lt;n&gt; --apply</code> moves them back.</td></tr>
+      <tr><td>A second directory refused for a project name</td><td>The name is bound to the directory that first used it, so a clone or a same-named checkout cannot read the first one's memories. Give the new one its own <code>"project"</code> in <code>brain.json</code>, or run <code>os-brain relabel --claim</code> at a terminal if you really moved it.</td></tr>
+      <tr><td>Phantom projects in the index</td><td>Something meant for a scratch directory ran against your real shared store. For anything throwaway, point <code>CLAUDE_CONFIG_DIR</code> and <code>OS_BRAIN_GLOBAL_DB</code> at scratch paths first.</td></tr>
+      <tr><td>A project's <code>brain.json</code> points at a team server or a zero-knowledge brain</td><td>That project was set up with ns-brain's team edition. os-brain cannot read those brains and refuses rather than answer from a local file that does not hold the project's memories. <a href="editions.html">Editions</a> covers moving between the two.</td></tr>
+    </table>
+    </div>
+
+    <h2 id="refusals">Refusals and what each one protects <a class="anchor" href="#refusals">#</a></h2>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Refusal</th><th>What it protects you from</th><th>How to get past it</th></tr>
+      <tr><td>"#42 in global is already about this"</td><td>Two answers to one question in one scope, which is worse than one answer that admits it does not know.</td><td><code>--supersedes 42</code>, <code>update 42</code> or <code>--allow-duplicate</code></td></tr>
+      <tr><td>"already holds this title ... Storing this would destroy the existing body"</td><td>A careless save overwriting a fact.</td><td><code>--update</code> (the old body goes to history) or <code>--supersedes</code></td></tr>
+      <tr><td>"#2 has already been superseded by #4"</td><td>Two current versions of one fact.</td><td><code>--supersedes 4</code> to chain, or <code>--fork-ok</code></td></tr>
+      <tr><td>"refusing 'confirmed'"</td><td>A session marking its own guess as fact.</td><td><code>--source</code>, <code>--ref</code> or <code>--source "stated by the user"</code></td></tr>
+      <tr><td>"this looks like" a credential or API key</td><td>A token in a memory, which then sits in every backup, snapshot and export.</td><td>Store a pointer to where it lives instead. <code>--allow-secret</code> only for a false positive. The prompt hook, <code>lead</code> and <code>object</code> have no override.</td></tr>
+      <tr><td><code>forget</code> refuses a pinned memory or a guardrail</td><td>A session deleting a rule because it got in the way.</td><td>Re-read it, then <code>--force</code>, or supersede it</td></tr>
+      <tr><td><code>forget</code> refuses a memory that supersedes others</td><td>Deleting it would bring back the old facts it replaced on purpose.</td><td>Supersede it with a correct version, or <code>--force</code> to accept them coming back</td></tr>
+      <tr><td><code>update</code> refuses an empty body</td><td>Wiping a memory by accident. An empty <code>--body</code> is usually a shell substitution that failed.</td><td><code>--force</code></td></tr>
+      <tr><td><code>prune</code> refuses tier A or B</td><td>The tiers that never fade hold the facts that are hardest to work out again.</td><td><code>--i-mean-it</code>, after reading the dump it took</td></tr>
+      <tr><td><code>prune</code> refuses a same-day cutoff</td><td>An <code>--older-than 0</code> that means "everything written this session".</td><td>Pick a real cutoff of a day or more</td></tr>
+      <tr><td><code>prune</code> refuses a large deletion</td><td>More than 25 deletions, or more than half of what it can reach, in one go.</td><td><code>--yes</code>, or a narrower <code>--scope</code> or <code>--tier</code></td></tr>
+      <tr><td><code>forget --all --apply</code> refuses</td><td>Emptying the project on a guess.</td><td><code>--i-mean-it</code>, after the plan</td></tr>
+      <tr><td>export, snapshot or a dump refuses to overwrite</td><td>Overwriting a file this tool did not make, which is somebody's work.</td><td><code>--force</code>, or write elsewhere</td></tr>
+      <tr><td>refuses a path git would track</td><td>A full copy of the brain committed to a repository for good.</td><td>Gitignore it, or <code>--allow-tracked</code> if you mean it</td></tr>
+      <tr><td>refuses a path outside the project</td><td>Every memory in cleartext landing somewhere nobody looks after it.</td><td><code>--allow-outside</code></td></tr>
+      <tr><td>"changing an axiom needs a person at a controlling terminal"</td><td>An agent (or a prompt-injected one) rewriting the rules every project follows.</td><td>Run it yourself, in a terminal you opened</td></tr>
+      <tr><td>"no project called '...' has ever opened this brain"</td><td>A note that would reach nobody, usually a typo in the name.</td><td>Use the name in that project's <code>brain.json</code></td></tr>
+      <tr><td>"--everywhere stores a memory at the org"</td><td>A memory filed in this project while claiming to reach every project. A local brain has no organisation above it.</td><td>Publish a lesson with <code>os-brain publish</code> instead</td></tr>
+    </table>
+    </div>
+
+    <h2 id="doctor">What doctor finds <a class="anchor" href="#doctor">#</a></h2>
+<pre>$ <span class="g">os-brain doctor</span>
+<span class="o">========================================================================
+INVOICES BRAIN &mdash; DOCTOR
+========================================================================
+5 live memories for invoices · 7 rows total, every project in this store · schema v16 · ...
+
+no problems found
+
+## NOTES
+  - 1 measure outside the declared band: pdf_render_p95 1250 above</span>
+$ <span class="g">os-brain doctor --fix</span>   <span class="c"># repairs the repairable, names the rest</span></pre>
+    <ul>
+      <li><b>Search index out of step.</b> Index entries with no memory behind them and memories missing from the index, counted separately so the two cannot cancel out. <code>reindex</code> rebuilds it.</li>
+      <li><b>Broken correction links and loops.</b> A memory that says it replaced an id that no longer exists, or A replacing B while B replaces A. <code>--fix</code> breaks a loop at one link and leaves the chains into it retracted, so facts withdrawn on purpose stay withdrawn.</li>
+      <li><b>Identity hashes.</b> A memory whose hash does not match its project, scope and title cannot be refined in place, so the next save of the same fact would make a second copy.</li>
+      <li><b>Integrity.</b> SQLite's own integrity check, unusable confidence values and measure readings that are not numbers.</li>
+      <li><b>Notes, not faults.</b> Confirmed memories with no date (nothing can age them, so <code>review --stale-days</code> never shows them), too many pins, most memories still carrying the default source, a measure series that mixes units or sits outside its band, notes that reached nobody, a database file readable by others and a write-ahead log that has grown without a checkpoint (<code>os-brain vacuum</code>).</li>
+    </ul>
+    <p>In a shared store <code>doctor</code> checks the whole file, because a fault in another project's rows is still a fault in the database you use. It shows counts and ids, never titles or bodies. <code>--fix</code> touches only your project's rows after dumping them.</p>
+
+    <h2 id="copies">Safety copies <a class="anchor" href="#copies">#</a></h2>
+    <p>A copy of the whole store is made at session open, at most once a day and only when the store has changed. You do not run this. <code>wakeup</code> does and says nothing unless it acted.</p>
+<pre>$ <span class="g">os-brain backup --list</span>
+<span class="o">1 safety copy in /home/you/.claude/os-brain/backups/db7f48d762a42bbb
+  2026-11-20 23:59  288kB       7 memories  schema v16  ok</span>
+$ <span class="g">os-brain backup --verify</span>                   <span class="c"># open each one and prove it reads</span>
+$ <span class="g">os-brain backup --restore &lt;file&gt;</span>           <span class="c"># dry run: the copy against the live store</span>
+<span class="o">restore from /home/you/.claude/os-brain/backups/db7f48d762a42bbb/brain-20261120-235952.db
+  copy       7 memories  schema v16
+  live       7 memories
+
+This was a dry run and nothing was written. Add --apply to do it.</span>
+$ <span class="g">os-brain backup --restore &lt;file&gt; --apply</span></pre>
+    <ul>
+      <li><b>A copy is a database</b>, so restoring puts a file back instead of importing rows into whatever is there now.</li>
+      <li><b>Every copy is checked as it is made</b>: integrity, schema version and memory count against the live store. One that fails is kept and reported, never deleted, because a bad copy is evidence about the source.</li>
+      <li><b>They live outside every project</b>, in a <code>backups</code> directory beside the shared store, mode 600. Never in the working tree, where one <code>git add -A</code> would publish every memory.</li>
+      <li><b>Rotation keeps 14 and never discards the copy holding the most memories.</b> Plain time-based rotation has a known failure: a store is emptied by accident, fourteen ordinary sessions follow and every good copy is replaced by a copy of the damage.</li>
+      <li><b>If the store is smaller than its best copy, the brief says so</b> and names the file to restore from. It never restores by itself, since <code>forget --all</code> is something people run on purpose.</li>
+    </ul>
+    <p>Restore refuses while any other session has the store open (a hook, an MCP server, the UI, another project on a shared store), because that session would go on writing into the file being thrown away. Close them first.</p>
+    <p><code>os-brain backup</code> on its own writes a timestamped full dump on demand. To get copies off the machine, declare a command under <code>"backups": {"push": "..."}</code> in <code>brain.json</code>, with <code>{file}</code> where the path goes. It runs after a copy verifies and needs approval on each machine, because <code>brain.json</code> is committed and a cloned repository must not run a stranger's command at session open.</p>
+
+    <h2 id="dumps">Export, import and snapshots <a class="anchor" href="#dumps">#</a></h2>
+<pre>$ <span class="g">os-brain export --out brain-backup.json</span>   <span class="c"># the whole project, as JSON</span>
+$ <span class="g">os-brain import brain-backup.json --dry-run</span>
+$ <span class="g">os-brain import brain-backup.json</span>          <span class="c"># merge: titles already here are skipped</span>
+$ <span class="g">os-brain import brain-backup.json --events</span> <span class="c"># also replay the activity log</span>
+$ <span class="g">os-brain snapshot --out MEMORY.md</span>          <span class="c"># a generated, readable mirror</span></pre>
+    <p>JSON is for moving rows between stores. Safety copies are for recovery. Every file these commands write is mode 600, refuses a path git would track or a path outside the project, refuses to overwrite a file without its own generated-by header and refuses to write through a symbolic link.</p>
+    <p>A dump is a file somebody handed over, so it does not get to say what a memory is worth. Rows arrive unpinned, with trust <code>imported</code> and <code>confirmed</code> only if a citation earns it. A dump that brings guardrails, or that would retract a pinned memory or a guardrail already here, is refused until you have read the dry run and pass <code>--force</code>. Axioms, standards, lessons and notes belong to every project and never come from a dump. Measures go in only when the project has none, because readings cannot be merged without doubling the series.</p>
+
+    <h2 id="upgrades">New versions and the schema <a class="anchor" href="#upgrades">#</a></h2>
+<pre>$ <span class="g">os-brain backup</span>                                  <span class="c"># first: the database is the only copy</span>
+$ <span class="g">go install github.com/chka/os-brain/cmd/os-brain@latest</span>      <span class="c"># or git pull and go build in your clone</span>
+$ <span class="g">os-brain init</span>                                    <span class="c"># in a project with its own file: refreshes hooks and docs</span>
+$ <span class="g">os-brain doctor</span></pre>
+    <p>A newer binary migrates the database when it first opens it. Migrations only add (a column, a table, values rewritten in place), never drop data. Each one runs in a single transaction with the version stamp, so a failure leaves the database exactly as it was. Our tests migrate real old databases through every version in between, because migration bugs show up on old databases and never on new ones.</p>
+    <p>An older binary opens a newer database only when the database says that binary can read it safely. If not, it refuses instead of writing rows it does not understand. Since every project on the machine opens the shared store, that refusal means the binary on this machine needs replacing with a current one.</p>
+    <p>If a brain will not open after an update, do not try fixes of your own. List the safety copies with <code>os-brain backup --list --verify</code> and restore one.</p>
+
+    <h2 id="undo">Undoing a mistake <a class="anchor" href="#undo">#</a></h2>
+<pre>$ <span class="g">os-brain history --id 42</span>   <span class="c"># archived versions of one memory</span>
+$ <span class="g">os-brain restore h7</span>        <span class="c"># bring an archived version back</span>
+$ <span class="g">os-brain update 42 --unsupersede</span>   <span class="c"># a supersede made by mistake</span></pre>
+    <p>A body replaced with <code>--update</code> and a memory removed with <code>forget</code> are archived first, so they can come back. <code>prune</code> and <code>forget --all</code> write a full dump before deleting anything and print its path (<code>os-brain import &lt;dump&gt;</code> puts it back). <code>forget</code> also leaves a tombstone, so the same wrong fact is not learned again later. <code>forget --purge</code> is the exception: it keeps no archived version and nothing can restore it.</p>
+    <p>"Clear the memory" and "remove the brain" are different requests. <code>os-brain forget --all</code> empties the project (a plan until <code>--apply --i-mean-it</code>, with a dump first). <code>os-brain uninstall</code> takes the brain out of the project, as a dry run until <code>--apply</code>. It keeps the database unless you add <code>--purge</code>.</p>
+
+    <h2 id="report">Reporting a bug <a class="anchor" href="#report">#</a></h2>
+    <p>If you are an agent in a project with a brain, <a href="axioms.html">the seventh axiom</a> applies: tell the user what you ran, what you expected and what happened. Do not fix the tool yourself and do not quietly work around it. A bug one project hides is one every other project will hit.</p>
+    <p>Reports go to <a href="https://github.com/chka/os-brain/issues">GitHub issues</a>. Include the exact command, what you expected, what happened and the output of <code>os-brain version</code>. Leave memory contents and paths out unless they matter to the bug: an issue is public. <a href="help.html">Help</a> has the rest.</p>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

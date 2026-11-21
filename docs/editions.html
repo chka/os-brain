@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain · editions</title>
+<meta name="description" content="os-brain is the open source local brain. ns-brain's team edition adds a server. Both use the same storage format, so a brain moves between them.">
+<link rel="canonical" href="https://chka.github.io/os-brain/editions.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Editions</div>
+    <h1>One brain on your machine,<br>or one for the <em>team</em>.</h1>
+    <p class="lede">os-brain is the local brain of ns-brain, rewritten as open source with the same behaviour. It is for one person on their own machine. <b>ns-brain's team edition adds a server, so one brain can be shared across machines and people.</b> Both read the same storage format, so a brain moves between them.</p>
+  </div>
+</header>
+
+<section class="tight">
+  <div class="wrap">
+    <div class="grid g2">
+      <div class="plan featured">
+        <h3>os-brain</h3>
+        <div class="perhead" style="margin-top:10px;">open source, MIT licence</div>
+        <ul>
+          <li>One person, any number of projects on the machine</li>
+          <li>Ranking, decay, supersession, provenance and every guard</li>
+          <li>Session hooks and recall on every prompt</li>
+          <li>MCP over stdio and Streamable HTTP</li>
+          <li>The web UI inside the binary</li>
+          <li>A shared store for axioms, standards and notes between projects</li>
+          <li>Full export and import, in both directions</li>
+          <li>No account, no telemetry, no update check</li>
+        </ul>
+        <a href="install.html" class="btn btn-solid">Install it</a>
+      </div>
+
+      <div class="plan">
+        <h3>ns-brain team edition</h3>
+        <div class="perhead" style="margin-top:10px;">a server, organisations and roles</div>
+        <ul>
+          <li>The same local brain, plus a server that holds it</li>
+          <li>One brain reached from several machines</li>
+          <li>More than one person on a brain, with organisations and roles</li>
+          <li>Encryption managed per organisation</li>
+          <li>Zero-knowledge brains</li>
+        </ul>
+        <a href="https://ns-brain.fightclub.pro/" class="btn btn-ghost">Read about ns-brain</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="banded">
+  <div class="wrap">
+    <div class="sec-kicker">Line by line</div>
+    <h2 style="margin-bottom:28px;">What actually <em>differs</em>.</h2>
+    <div class="table-scroll">
+      <table>
+        <tr><th>&nbsp;</th><th>os-brain</th><th>ns-brain team edition</th></tr>
+        <tr><td>Source code</td><td class="yes">open, MIT</td><td>closed</td></tr>
+        <tr><td>Projects</td><td class="yes">unlimited</td><td class="yes">unlimited</td></tr>
+        <tr><td>Ranking, decay, supersession, provenance, guards</td><td class="yes">full</td><td class="yes">full</td></tr>
+        <tr><td>Session hooks and recall on every prompt</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>MCP and the web UI</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Export and import</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Storage format</td><td>SQLite, schema v16</td><td>the same</td></tr>
+        <tr><td>Reaching one brain from several machines</td><td class="no">no, each machine has its own</td><td class="yes">yes</td></tr>
+        <tr><td>People per brain</td><td>1</td><td class="yes">more than one</td></tr>
+        <tr><td>Organisations and roles</td><td class="no">no</td><td class="yes">yes</td></tr>
+        <tr><td>Encryption at rest</td><td class="no">no, deliberately</td><td class="yes">managed per organisation</td></tr>
+        <tr><td>Who runs it</td><td>you, on your machine</td><td>a server</td></tr>
+        <tr><td>Network calls of its own</td><td>none</td><td>to its server</td></tr>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:20px;font-size:16px;max-width:44em;">Encryption at rest is missing from os-brain on purpose. One developer keeping their own data on their own machine has no second party to be protected from and full-disk encryption on the laptop is the right layer for that job. The file is readable only by its owner (mode 600) and stays out of git.</p>
+  </div>
+</section>
+
+<section id="move">
+  <div class="wrap split">
+    <div>
+      <div class="sec-kicker">Moving a brain</div>
+      <h2>Same format,<br><em>both</em> ways.</h2>
+    </div>
+    <div class="sec-body">
+      <p>The two editions write the same SQLite schema, so nothing is converted. <b>A project's own <code>brain/brain.db</code> opens in either binary as it is.</b> Memories, types, scopes, history and supersede links all come across.</p>
+      <p>A project kept in a shared store moves with <code>export</code> in one edition and <code>import</code> in the other, run in a project of the same name. Import keeps only the rows of the project it runs in:</p>
+<pre>$ <span class="g">ns-brain export --out ~/orchard.json --allow-outside</span>  <span class="c"># in the ns-brain project</span>
+$ <span class="g">os-brain import ~/orchard.json --dry-run</span>  <span class="c"># in the os-brain project of the same name</span>
+$ <span class="g">os-brain import ~/orchard.json --force</span></pre>
+      <p>The export is every memory in cleartext, so it is refused inside the repository unless that path is gitignored: write it outside with <code>--allow-outside</code>. <code>import --dry-run</code> reports what would change and writes nothing. If the dump brings guardrails (the <code>policy</code> and <code>constraint</code> types), the import stops and asks for <code>--force</code>, because a guardrail binds every session of the project it lands in. Read them in the dry run first. Add <code>--events</code> to bring the activity log as well.</p>
+      <p>os-brain uses its own command name, its own <code>OS_BRAIN_*</code> variables and its own shared store at <code>~/.claude/os-brain/brain.db</code>. It can sit beside an installed ns-brain without either one writing into the other's store.</p>
+    </div>
+  </div>
+</section>
+
+<section class="banded" id="switch">
+  <div class="wrap split">
+    <div>
+      <div class="sec-kicker">Switching a project</div>
+      <h2>From ns-brain<br>to <em>os-brain</em>.</h2>
+    </div>
+    <div class="sec-body">
+      <p>Take ns-brain's hooks out first, then wire os-brain's. The uninstall keeps the database, so the memories are still there when os-brain opens it.</p>
+<pre>$ <span class="g">ns-brain uninstall</span>          <span class="c"># read the plan</span>
+$ <span class="g">ns-brain uninstall --apply</span>  <span class="c"># removes ns-brain's hooks, keeps brain.db</span>
+$ <span class="g">os-brain init</span>               <span class="c"># wires os-brain's hooks to the same brain</span>
+$ <span class="g">os-brain wakeup</span>             <span class="c"># check the brief shows your memories</span></pre>
+      <p>Skip the uninstall and both editions' hooks stay wired: every session gets two briefs. The same holds the other way round.</p>
+      <p>A project that the team edition attached to its server cannot be switched this way, because its memories are not in any local file. os-brain refuses to run in a project whose <code>brain.json</code> names a team server or a zero-knowledge brain. It says which one, tells you to use ns-brain there and does not answer from an empty local file instead.</p>
+      <p>Export it from the team edition first, then import it into a local brain as above.</p>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>Start with the open one.</h2>
+    <p>It is the whole local brain for one developer and the code is yours to read.</p>
+    <div class="cta-row">
+      <a href="install.html" class="btn btn-solid">Install os-brain</a>
+      <a href="https://ns-brain.fightclub.pro/" class="btn btn-ghost">Read about ns-brain</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

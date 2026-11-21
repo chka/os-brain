@@ -51,12 +51,12 @@ You need Go 1.26 or newer.
 ```bash
 git clone https://github.com/chka/os-brain
 cd os-brain
-go build -o ~/.local/bin/os-brain .
+go build -o ~/.local/bin/os-brain ./cmd/os-brain
 ```
 
-Or `go install github.com/chka/os-brain@latest`. The binary has no cgo and no
-dependencies beyond the Go standard library, a pure Go SQLite driver and golang.org/x/text,
-so it cross-compiles to a single static file for each platform.
+Or `go install github.com/chka/os-brain/cmd/os-brain@latest`. The binary has no cgo
+and no dependencies beyond the Go standard library, a pure Go SQLite driver and
+golang.org/x/text, so it cross-compiles to a single static file for each platform.
 
 ## Start a brain in a project
 

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain in your coding agent</title>
+<meta name="description" content="What os-brain init wires for each coding agent, what reaches the model through hooks and MCP and what you add by hand.">
+<link rel="canonical" href="https://chka.github.io/os-brain/agents.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Docs · agents</div>
+    <h1>Your agent, <em>with</em> a brain.</h1>
+    <p class="lede">Every coding agent takes in outside context its own way. Some run a command when a session opens, some on every message, some only talk MCP. For each agent this page says what the brain gets through, what <code>os-brain init</code> writes for it and what you add by hand.</p>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="toc">
+    <div class="t">On this page</div>
+    <a href="#channels">What a brain needs from an agent</a>
+    <a href="#choosing">How init picks agents</a>
+    <a href="#claude">Claude Code</a>
+    <a href="#codex">Codex CLI</a>
+    <a href="#cursor">Cursor</a>
+    <a href="#gemini">Gemini CLI</a>
+    <a href="#opencode">OpenCode</a>
+    <a href="#kilo">Kilo</a>
+    <a href="#copilot">Copilot CLI</a>
+    <a href="#devin">Devin CLI</a>
+    <a href="#qwen">Qwen Code</a>
+    <a href="#hermes">Hermes Agent</a>
+    <a href="#continue">Continue CLI</a>
+    <a href="#cline">Cline CLI</a>
+    <a href="#others">Any other agent</a>
+    <a href="#verify">Check it worked</a>
+  </aside>
+
+  <main class="doc-body">
+
+    <h2 id="channels">What a brain needs from an agent <a class="anchor" href="#channels">#</a></h2>
+    <p>An agent reaches a brain in three ways. Hooks bring the brain in without being asked. Shell commands and MCP are how the agent asks the brain and writes to it: any agent that can run a command can use the CLI and <a href="mcp.html">MCP</a> gives the same commands as tools. The tables below call each hook moment a channel, with MCP as the last one.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Channel</th><th>What it carries</th><th>Who decides</th></tr>
+      <tr><td>Session start</td><td>The brief: the clock, the guardrails, preferences, pinned facts and the working tree</td><td>The hook. Always.</td></tr>
+      <tr><td>Every message</td><td>Memories that match what you typed</td><td>The hook. Always.</td></tr>
+      <tr><td>Session end</td><td>What the session did and whether it stored any of it, for the next brief</td><td>The hook. Always.</td></tr>
+      <tr><td>MCP</td><td>Nearly every command, as a tool</td><td>The model, when it thinks of it</td></tr>
+    </table>
+    </div>
+    <p>The brief at session start matters most: the model has it before it decides anything. A hook runs every time, whether the model remembers or not. MCP runs only when the model decides to call it, which is most of the time and never all of the time. So <code>init</code> wires hooks wherever an agent has them and MCP fills the gaps.</p>
+    <p>Hooks for agents other than Claude Code, Copilot and Devin call <code>brain/autoexec.sh</code>, a three-line script <code>init</code> writes beside the database. It finds the brain from its own location, so the hook works from whatever directory the agent runs it in:</p>
+<pre><span class="c"># brain/autoexec.sh, as init writes it</span>
+#!/bin/sh
+# Written by `os-brain init`. Resolves this brain from its own location, so the
+# hook works whatever directory the agent runs it from.
+OS_BRAIN_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" &amp;&amp; pwd)
+export OS_BRAIN_HOME
+exec os-brain "$@"</pre>
+    <p>Those hook files name the script by absolute path, because these agents make no promise about the directory they run a hook from. The cost is that the file belongs to your checkout: keep it out of the repository and let each person run <code>init</code> in their own.</p>
+
+    <h2 id="choosing">How init picks agents <a class="anchor" href="#choosing">#</a></h2>
+<pre>$ <span class="g">cd ~/src/yourproject</span>
+$ <span class="g">os-brain init</span>                        <span class="c"># at a terminal: asks which agent</span>
+$ <span class="g">os-brain init --agent claude,cursor</span>    <span class="c"># no question, exactly these</span></pre>
+    <p>At a terminal, plain <code>os-brain init</code> lists the agents, marks the ones it found on this machine and asks. The last choice, "I will do it myself", wires nothing and prints the block each agent needs so you can add it by hand. With no terminal to ask (a script, <code>&lt;/dev/null</code>), it wires every agent whose config directory it finds in the project or in your home directory. <code>--agent</code> takes any of <code>claude</code>, <code>codex</code>, <code>cursor</code>, <code>gemini</code>, <code>opencode</code>, <code>kilo</code>, <code>copilot</code>, <code>devin</code>, <code>qwen</code>, <code>hermes</code> and <code>continue</code>.</p>
+    <p>Whatever it picks, <code>init</code> adds its entries beside what each file already holds and refuses a file it cannot parse rather than replacing it: a config somebody wrote by hand is worth more than a hook. Run it again and nothing changes. It never writes into <code>CLAUDE.md</code> or any other instruction file. A line in a markdown file is a request the agent may ignore, while a hook runs every time.</p>
+    <p><code>os-brain uninstall</code> takes every entry back out (a dry run until <code>--apply</code>) and keeps the database.</p>
+
+    <h2 id="claude">Claude Code <a class="anchor" href="#claude">#</a></h2>
+    <p>The hooks were designed around Claude Code and it carries every channel, plus one more during a turn that carries direct messages between live sessions.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Channel</th><th>In Claude Code</th><th>How</th></tr>
+      <tr><td>Session start</td><td>Works</td><td><code>SessionStart</code> runs <code>os-brain wakeup</code></td></tr>
+      <tr><td>Every message</td><td>Works</td><td><code>UserPromptSubmit</code> runs <code>os-brain hook-recall</code> on what you typed</td></tr>
+      <tr><td>Session end</td><td>Works</td><td><code>Stop</code> at the end of each turn, <code>SessionEnd</code> when you quit</td></tr>
+      <tr><td>During a turn</td><td>Works</td><td><code>PostToolUse</code> runs <code>os-brain hook-tool</code>, so a message sent to a busy session lands on its next tool call</td></tr>
+      <tr><td>MCP</td><td>Works</td><td><code>claude mcp add</code>, or <code>.mcp.json</code></td></tr>
+    </table>
+    </div>
+<pre>$ <span class="g">os-brain init --agent claude</span>
+  + SessionStart hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain wakeup
+  + Stop hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain hook-stop
+  + PostToolUse hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain hook-tool
+  + SessionEnd hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain hook-end
+  + UserPromptSubmit hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain hook-recall
+  + .claude/commands/who.md
+  ...</pre>
+    <p>Five hooks go into <code>.claude/settings.json</code>:</p>
+<pre><span class="c"># .claude/settings.json, the hooks part</span>
+"hooks": {
+  "SessionStart":     [{ "hooks": [{ "type": "command", "command": "OS_BRAIN_HOME=\"$CLAUDE_PROJECT_DIR/brain\" os-brain wakeup" }] }],
+  "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "OS_BRAIN_HOME=\"$CLAUDE_PROJECT_DIR/brain\" os-brain hook-recall" }] }],
+  "PostToolUse":      [{ "hooks": [{ "type": "command", "command": "OS_BRAIN_HOME=\"$CLAUDE_PROJECT_DIR/brain\" os-brain hook-tool" }] }],
+  "Stop":             [{ "hooks": [{ "type": "command", "command": "OS_BRAIN_HOME=\"$CLAUDE_PROJECT_DIR/brain\" os-brain hook-stop" }] }],
+  "SessionEnd":       [{ "hooks": [{ "type": "command", "command": "OS_BRAIN_HOME=\"$CLAUDE_PROJECT_DIR/brain\" os-brain hook-end" }] }]
+}</pre>
+    <p>The hooks name the brain through <code>$CLAUDE_PROJECT_DIR</code>, which Claude Code sets, so there is no absolute path in the file. Commit it only if everybody working on the repository has os-brain installed: for anyone who does not, every session starts with a failing hook. <code>--no-auto-recall</code> leaves out <code>UserPromptSubmit</code>, which also turns off the prompt capture: the hook keeps what you type (up to 8000 characters, for 30 days) and <code>os-brain utterances</code> lists it.</p>
+    <p><code>init</code> also writes slash commands into <code>.claude/commands/</code> for seeing and messaging other live sessions: <code>/who</code>, <code>/msg</code>, <code>/rdo</code>, <code>/dnd</code>, <code>/inbox</code>, <code>/accept</code> and <code>/reject</code>. <code>init --channel</code> registers the direct-message channel server in <code>.mcp.json</code>, which wakes a session the moment a message arrives.</p>
+    <p>The hooks already bring memories in on every message and Claude Code can run <code>os-brain</code> commands, so MCP is optional. Add it when you want the model to use typed tools instead of shell commands:</p>
+<pre>$ <span class="g">claude mcp add brain -- os-brain mcp</span></pre>
+    <p>Claude Code starts the server in the project, so it finds the brain with no path. On a shared store add <code>-e OS_BRAIN_PROJECT=yourproject</code>; <a href="mcp.html#project">the MCP page</a> says why the server refuses to guess.</p>
+
+    <h2 id="codex">Codex CLI <a class="anchor" href="#codex">#</a></h2>
+    <p>Codex runs Claude-style hooks from its own <code>.codex/hooks.json</code> and carries every channel. Two of its rules decide whether the hooks run at all.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Channel</th><th>In Codex</th><th>How</th></tr>
+      <tr><td>Session start</td><td>Works</td><td><code>SessionStart</code> in <code>.codex/hooks.json</code>, matching <code>startup|resume</code></td></tr>
+      <tr><td>Every message</td><td>Works</td><td><code>UserPromptSubmit</code>, recall on what you typed</td></tr>
+      <tr><td>Session end</td><td>Works</td><td><code>Stop</code></td></tr>
+      <tr><td>MCP</td><td>Works</td><td>A stdio server in Codex's own config</td></tr>
+    </table>
+    </div>
+<pre>$ <span class="g">os-brain init --agent codex</span>
+  + Codex SessionStart hook -&gt; /home/you/src/yourproject/brain/autoexec.sh wakeup --emit codex
+  + Codex UserPromptSubmit hook -&gt; /home/you/src/yourproject/brain/autoexec.sh hook-recall --emit codex
+  + Codex Stop hook -&gt; /home/you/src/yourproject/brain/autoexec.sh hook-stop --emit codex</pre>
+    <p>Codex runs a hook only when its hooks feature is on and each hook has been reviewed. The interactive CLI asks the first time it meets one; a headless <code>codex exec</code> skips unreviewed hooks unless you allow them. Codex also reads a hook's output as JSON whenever it starts with <code>[</code> and marks the hook failed if that does not parse. The brain's recall block starts <code>[brain]</code>, so <code>--emit codex</code> hands it over in the JSON shape Codex reads. If you wired Codex with an older build, run <code>init</code> again: it replaces the brain's old entries rather than adding a second set, which would brief twice.</p>
+
+    <h2 id="cursor">Cursor <a class="anchor" href="#cursor">#</a></h2>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Channel</th><th>In Cursor</th><th>How</th></tr>
+      <tr><td>Session start</td><td>Works</td><td><code>sessionStart</code>, with the brief in <code>additional_context</code></td></tr>
+      <tr><td>Every message</td><td>Not available</td><td>Cursor's prompt hook can block a message but cannot add to it. Use MCP.</td></tr>
+      <tr><td>Session end</td><td>Works</td><td><code>stop</code> and <code>sessionEnd</code></td></tr>
+      <tr><td>MCP</td><td>Works</td><td>A stdio server in Cursor's MCP settings</td></tr>
+    </table>
+    </div>
+<pre><span class="c"># .cursor/hooks.json, as init writes it in ~/src/yourproject</span>
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [{ "command": "/home/you/src/yourproject/brain/autoexec.sh wakeup --emit cursor" }],
+    "stop":         [{ "command": "/home/you/src/yourproject/brain/autoexec.sh hook-stop" }],
+    "sessionEnd":   [{ "command": "/home/you/src/yourproject/brain/autoexec.sh hook-stop" },
+                     { "command": "/home/you/src/yourproject/brain/autoexec.sh hook-end" }]
+  }
+}</pre>
+    <p>Cursor takes no plain text from a session-start hook: context arrives only in the JSON field <code>additional_context</code>, which is what <code>--emit cursor</code> produces. Its prompt hook is deliberately not wired, since a recall hook there would run on every message and inject nothing. So recall only happens when the model asks for it: add <code>os-brain mcp</code> as a stdio server in Cursor's MCP settings with <code>OS_BRAIN_HOME</code> set to the project's brain directory.</p>
+    <p>Cursor also runs the hooks in <code>.claude/settings.json</code>. In a repository wired for both (<code>init --agent claude,cursor</code>) the Claude hook notices from the payload that Cursor started it and that Cursor's own hook carries the brief, so it stays quiet and the brief arrives once. A Claude Code session started from Cursor's terminal is unaffected.</p>
+
+    <h2 id="gemini">Gemini CLI <a class="anchor" href="#gemini">#</a></h2>
+    <p>Gemini carries every channel a brain needs, so nothing has to go through MCP that a hook can do instead.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Channel</th><th>In Gemini</th><th>How</th></tr>
+      <tr><td>Session start</td><td>Works</td><td><code>SessionStart</code></td></tr>
+      <tr><td>Every message</td><td>Works</td><td><code>BeforeAgent</code> runs recall on what you typed</td></tr>
+      <tr><td>Session end</td><td>Works</td><td><code>AfterAgent</code> at the end of each turn, <code>SessionEnd</code> when you quit</td></tr>
+      <tr><td>MCP</td><td>Works</td><td><code>mcpServers</code> in <code>.gemini/settings.json</code></td></tr>
+    </table>
+    </div>
+<pre><span class="c"># .gemini/settings.json, the hooks part</span>
+"hooks": {
+  "SessionStart": [{ "hooks": [{ "type": "command", "command": "/home/you/src/yourproject/brain/autoexec.sh wakeup --emit gemini" }] }],
+  "BeforeAgent":  [{ "hooks": [{ "type": "command", "command": "/home/you/src/yourproject/brain/autoexec.sh hook-recall --emit gemini" }] }],
+  "AfterAgent":   [{ "hooks": [{ "type": "command", "command": "/home/you/src/yourproject/brain/autoexec.sh hook-stop --emit gemini" }] }],
+  "SessionEnd":   [{ "hooks": [{ "type": "command", "command": "/home/you/src/yourproject/brain/autoexec.sh hook-end" }] }]
+}</pre>
+    <p>Gemini reads a hook's output only as JSON (<code>hookSpecificOutput.additionalContext</code>), which is what <code>--emit gemini</code> is for. It also passes everything added so far into the prompt it hands the next hook; os-brain strips that out before it searches, so recall matches what you typed and not the brief. <code>SessionEnd</code> is not awaited, so it gets only the cheap bookkeeping of <code>hook-end</code>.</p>
+
+    <h2 id="opencode">OpenCode <a class="anchor" href="#opencode">#</a></h2>
+    <p>OpenCode runs no hook commands. It loads JavaScript plugins instead, so <code>init</code> writes one and every channel works through it.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Channel</th><th>In OpenCode</th><th>How</th></tr>
+      <tr><td>Session start</td><td>Works</td><td>The plugin adds the brief to the system prompt, once per session</td></tr>
+      <tr><td>Every message</td><td>Works</td><td><code>chat.message</code>: recall on what you typed, sent with that turn</td></tr>
+      <tr><td>Session end</td><td>Works</td><td><code>session.idle</code>, at the end of each turn</td></tr>
+      <tr><td>MCP</td><td>Works</td><td>A local server in OpenCode's config</td></tr>
+    </table>
+    </div>
+<pre>$ <span class="g">os-brain init --agent opencode</span>
+  + OpenCode plugin -&gt; /home/you/src/yourproject/.opencode/plugins/brain.js</pre>
+    <p>Only a session somebody typed into gets the brief. The extra model call OpenCode makes to name a session does not, since briefing it paid for the whole brief again and left a session that never ended. The plugin runs the brain's own <code>autoexec.sh</code> and hands it OpenCode's session id, so a session's start and end land on the same record. If a <code>brain.js</code> of your own is already there, <code>init</code> leaves it alone and prints the plugin for you to merge by hand. <code>os-brain uninstall</code> removes the plugin only if <code>init</code> wrote it.</p>
+
+    <h2 id="kilo">Kilo <a class="anchor" href="#kilo">#</a></h2>
+    <p>Kilo takes the same plugin as OpenCode, at its own path, so everything in the OpenCode section applies.</p>
+<pre>$ <span class="g">os-brain init --agent kilo</span>
+  + Kilo plugin -&gt; /home/you/src/yourproject/.kilo/plugin/brain.js</pre>
+    <p>Kilo reads <code>.kilo/plugin/</code> (singular) and ignores <code>.opencode/plugins/</code>, so a repository where some people use OpenCode and some use Kilo can carry both and nobody is briefed twice. Plain <code>init</code> finds Kilo through <code>.kilo</code> in the project, <code>~/.kilo</code> or <code>~/.config/kilo</code>.</p>
+
+    <h2 id="copilot">Copilot CLI <a class="anchor" href="#copilot">#</a></h2>
+    <p>Copilot CLI runs the hooks in <code>.claude/settings.json</code> and sends them Claude Code's own payloads, so it takes the same wiring as Claude Code. The difference is the reply: Copilot reads only JSON. The brain tells the two agents apart and answers each in its own format.</p>
+<pre>$ <span class="g">os-brain init --agent copilot</span>
+  + SessionStart hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain wakeup (Copilot CLI reads this file)
+  ...</pre>
+    <p>That writes Claude Code's hook file even if nobody on the project uses Claude Code, because that is the file Copilot reads. Using one file means a project used from both agents gets one brief in each and never two. Copilot also reads <code>.github/hooks/</code>; leave the brain out of there, or every session gets the brief twice.</p>
+
+    <h2 id="devin">Devin CLI <a class="anchor" href="#devin">#</a></h2>
+    <p>Devin CLI runs <code>.claude/settings.json</code> as Copilot does and reads only the JSON form of the reply, which the brain sends it.</p>
+<pre>$ <span class="g">os-brain init --agent devin</span>
+  + SessionStart hook -&gt; OS_BRAIN_HOME="$CLAUDE_PROJECT_DIR/brain" os-brain wakeup (Devin CLI reads this file)
+  ...</pre>
+    <p>Devin also reads <code>.devin/hooks.v1.json</code>, so the brain stays out of there. Devin skips a <code>SessionStart</code> entry whose matcher lists Claude Code's session sources, so the brain's entry has no matcher at all.</p>
+
+    <h2 id="qwen">Qwen Code <a class="anchor" href="#qwen">#</a></h2>
+    <p>Qwen Code takes Claude Code's hook format and payloads and reads plain output, from its own <code>.qwen/settings.json</code>. It does not look at <code>.claude/</code>.</p>
+<pre>$ <span class="g">os-brain init --agent qwen</span>
+  + Qwen Code SessionStart hook -&gt; /home/you/src/yourproject/brain/autoexec.sh wakeup
+  + Qwen Code UserPromptSubmit hook -&gt; /home/you/src/yourproject/brain/autoexec.sh hook-recall
+  + Qwen Code Stop hook -&gt; /home/you/src/yourproject/brain/autoexec.sh hook-stop
+  + Qwen Code SessionEnd hook -&gt; /home/you/src/yourproject/brain/autoexec.sh hook-end</pre>
+
+    <h2 id="hermes">Hermes Agent <a class="anchor" href="#hermes">#</a></h2>
+    <p>Hermes keeps its hooks in <code>~/.hermes/config.yaml</code>: one file for your whole user, outside every project. Rewriting somebody's agent config to wire one project is not <code>init</code>'s call, so it prints the block instead, with this project's paths filled in:</p>
+<pre>$ <span class="g">os-brain init --agent hermes</span>
+...
+    hooks:
+      pre_llm_call:
+        - {command: "/home/you/src/yourproject/brain/autoexec.sh hook-recall --emit hermes", timeout: 20}
+      on_session_end:
+        - {command: "/home/you/src/yourproject/brain/autoexec.sh hook-stop", timeout: 15}
+
+the brain exists but nothing reads it until the block above is added</pre>
+    <p><code>pre_llm_call</code> is the only Hermes hook whose output reaches the model, so it carries the brief on a session's first turn as well as recall. The hooks run from Hermes's own install directory, not your project, so they name the brain through the script's absolute path and one Hermes setup reads one brain. If <code>hooks:</code> is already in the file, merge the entries into it rather than adding a second key. Hermes asks you to approve new hooks the first time they run.</p>
+
+    <h2 id="continue">Continue CLI <a class="anchor" href="#continue">#</a></h2>
+    <p>Continue's CLI loads hook files and never fires them, so the brain reaches it through MCP only, when the model decides to ask. <code>init</code> prints the server block for the YAML config you run <code>cn</code> with:</p>
+<pre>$ <span class="g">os-brain init --agent continue</span>
+...
+    mcpServers:
+      - name: brain
+        type: stdio
+        command: os-brain
+        args: [mcp]</pre>
+    <p>The server starts in the project, so this one entry finds the right brain wherever you run <code>cn</code>. On a shared store add <code>env: {OS_BRAIN_PROJECT: yourproject}</code>.</p>
+
+    <h2 id="cline">Cline CLI <a class="anchor" href="#cline">#</a></h2>
+    <p>Cline's CLI throws away what its hooks print, so nothing a hook says reaches the model and <code>init</code> writes nothing for it. The brain gets in through MCP: create the brain with plain <code>os-brain init</code> and add <code>os-brain mcp</code> to <code>~/.cline/data/settings/cline_mcp_settings.json</code> with <code>OS_BRAIN_HOME</code> in its env.</p>
+    <p>Here <code>OS_BRAIN_HOME</code> is required. The Cline CLI starts every MCP server from one shared background process, which sits in whichever project started it first, so a server that looked for its brain in the current directory would answer from another project with no warning. The server recognises Cline and refuses every call until <code>OS_BRAIN_HOME</code> or <code>OS_BRAIN_PROJECT</code> names the brain:</p>
+<pre>this server cannot tell which brain you mean: Cline starts MCP servers from one shared process
+whose directory is whichever project started it first, so the working directory names the wrong
+project as often as the right one. Set OS_BRAIN_HOME to this project's brain directory (and
+OS_BRAIN_PROJECT on a shared store) in the server's env in ~/.cline/data/settings/cline_mcp_settings.json</pre>
+    <p>That file is per user, so it points at one brain. Moving to another project means editing the path.</p>
+
+    <h2 id="others">Any other agent <a class="anchor" href="#others">#</a></h2>
+    <p>An agent that can run a shell command can use the CLI as it is: tell it to run <code>os-brain brief</code> at the start and <code>os-brain recall</code> before it searches files. An agent that speaks MCP over stdio can run <code>os-brain mcp</code>; start with <a href="mcp.html">the MCP page</a>. Neither gives you the brief before the first turn, which is what hooks are for, so if your agent has hooks of its own <a href="https://github.com/chka/os-brain/issues">tell us</a> how they work.</p>
+
+    <h2 id="verify">Check it worked <a class="anchor" href="#verify">#</a></h2>
+    <p>Each hook is a command you can run yourself. If a session does not seem to know what the brain holds, run the hook by hand from the project and look at what it prints:</p>
+<pre>$ <span class="g">os-brain wakeup --no-cursor</span>                                 <span class="c"># Claude Code, Copilot, Devin, Qwen</span>
+$ <span class="g">./brain/autoexec.sh wakeup --emit cursor --no-cursor</span>         <span class="c"># Cursor: one JSON object</span>
+{"additional_context":"## THIS PROJECT HAS A BRAIN ...
+$ <span class="g">echo '{"prompt":"what port does staging use"}' | ./brain/autoexec.sh hook-recall --emit gemini</span>
+{"hookSpecificOutput":{"additionalContext":"[brain] 2026-11-21 00:05 GMT (Saturday night)","hookEventName":"BeforeAgent"}}</pre>
+    <p><code>--no-cursor</code> keeps the last-brief marker where it was, so the next real session still sees what is new. If the command prints the brief but the agent never shows it, the agent did not run the hook: open a new session rather than resuming an old one, check the agent trusts the folder and see <a href="troubleshooting.html">troubleshooting</a>.</p>
+
+  </main>
+</div>
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

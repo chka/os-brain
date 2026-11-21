@@ -63,7 +63,12 @@ func RealSpines() []string {
 func Start() Guard {
 	g := Guard{before: map[string]map[string]bool{}}
 	for _, spine := range RealSpines() {
-		g.before[spine] = projectIDs(spine)
+		// A spine that cannot be read now is left out rather than recorded as empty.
+		if ids, ok := projectIDs(spine); ok {
+			g.before[spine] = ids
+		} else {
+			fmt.Fprintf(os.Stderr, "testguard: %s could not be read; not checked this run\n", spine)
+		}
 	}
 	return g
 }
@@ -72,7 +77,12 @@ func Start() Guard {
 func (g Guard) Leaks() []string {
 	var out []string
 	for spine, before := range g.before {
-		for id, name := range projectNames(spine) {
+		after, ok := projectNames(spine)
+		if !ok {
+			out = append(out, fmt.Sprintf("%s: could not be read after the run, so it was not checked", spine))
+			continue
+		}
+		for id, name := range after {
 			if !before[id] {
 				out = append(out, fmt.Sprintf("%s: new project %q (root id %s)", spine, name, id))
 			}
@@ -97,26 +107,30 @@ func (g Guard) Report(code int) int {
 	return 1
 }
 
-func projectIDs(spine string) map[string]bool {
+func projectIDs(spine string) (map[string]bool, bool) {
+	names, ok := projectNames(spine)
 	ids := map[string]bool{}
-	for id := range projectNames(spine) {
+	for id := range names {
 		ids[id] = true
 	}
-	return ids
+	return ids, ok
 }
 
-// projectNames reads root_id -> name from a spine, read-only. A file that is not a spine (no
-// projects table) has nothing to protect and reads as empty.
-func projectNames(spine string) map[string]string {
+// projectNames reads root_id -> name from a spine, read-only, waiting out a writer. ok is
+// false when the file could not be read at all: a real spine is in use by the person's own
+// sessions while the suite runs, and a read that lost to a lock must not be mistaken for an
+// empty index, or every existing project would look new afterwards. A file that is not a
+// spine (no projects table) has nothing to protect and reads as empty.
+func projectNames(spine string) (map[string]string, bool) {
 	out := map[string]string{}
-	db, err := sql.Open("sqlite", "file:"+spine+"?mode=ro")
+	db, err := sql.Open("sqlite", "file:"+spine+"?mode=ro&_pragma=busy_timeout(10000)")
 	if err != nil {
-		return out
+		return out, false
 	}
 	defer db.Close()
 	rows, err := db.Query("SELECT root_id, name FROM projects")
 	if err != nil {
-		return out
+		return out, strings.Contains(err.Error(), "no such table")
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -125,5 +139,5 @@ func projectNames(spine string) map[string]string {
 			out[id] = strings.TrimSpace(name)
 		}
 	}
-	return out
+	return out, rows.Err() == nil
 }

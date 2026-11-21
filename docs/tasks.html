@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tasks, measures and leads</title>
+<meta name="description" content="Reminders that come back on a schedule, numbers that only mean something as a series and an optional sales pipeline. What each one is for, how it reaches you and what it will not do.">
+<link rel="canonical" href="https://chka.github.io/os-brain/tasks.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Docs · beyond memories</div>
+    <h1>Three things that<br>are <em>not</em> memories.</h1>
+    <p class="lede">A memory is true until something changes it. A task is owed until it is done. A measure is a number that only means something next to its earlier readings. Mixing any of them in with memories would throw off the ranking, so each one sits beside them with its own rules.</p>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="toc">
+    <div class="t">On this page</div>
+    <a href="#tasks">Tasks</a>
+    <a href="#states">Four states</a>
+    <a href="#when">Schedules</a>
+    <a href="#delivery">How tasks reach you</a>
+    <a href="#todo">The list as a file</a>
+    <a href="#open">What is outstanding</a>
+    <a href="#measures">Measures</a>
+    <a href="#bands">Limits on a number</a>
+    <a href="#leads">Leads for sales work</a>
+    <a href="#log">The activity log</a>
+  </aside>
+
+  <main class="doc-body">
+
+    <h2 id="tasks">Tasks <a class="anchor" href="#tasks">#</a></h2>
+    <p>When someone asks to be reminded every week or chased on Friday, use a task. Do not rely on whatever scheduler the agent's host happens to have.</p>
+<pre>$ <span class="g">os-brain task add "rotate the staging certificate" --when "every monday 9am"</span>
+<span class="o">task #1 [user] rotate the staging certificate
+  due 2026-11-23 09:00 (every mon at 09:00)</span>
+
+$ <span class="g">os-brain task add "ask whether the vendor replied about the PDF fonts" \
+    --owner agent --when "tomorrow 9am"</span>
+<span class="o">task #2 [agent] ask whether the vendor replied about the PDF fonts
+  due 2026-11-21 09:00 (once)</span>
+
+$ <span class="g">os-brain task list</span>
+<span class="o">[ ] #3   check the invoice totals report  (due 2026-11-21 02:58)
+[ ] #2   ask whether the vendor replied about the PDF fonts  (you owe this · set by session demo-ses on 2026-11-20 · due 2026-11-21 09:00)
+[ ] #1   rotate the staging certificate  (due 2026-11-23 09:00 · every mon at 09:00)</span></pre>
+    <p><code>--owner user|agent</code> says who owes it. <code>user</code> (the default) is a reminder for the person. <code>agent</code> is a job for a session to raise, which is what you want for "ask them whether X happened". An agent-owned task shows which session set it and when, because it is the instruction of whoever added it, which may have been an earlier session and not the user.</p>
+    <p>Put the condition in the body. "Remind me about the draft" is a nudge. "Has the vendor replied? If so, reread the contract notes and offer to send; if not, one line and move on" is a task a later session can act on without guessing.</p>
+
+    <h2 id="states">Four states <a class="anchor" href="#states">#</a></h2>
+<pre>$ <span class="g">os-brain task wait 2</span>     <span class="c"># submitted, the next move is someone else's</span>
+<span class="o">#2 waiting (was open): ask whether the vendor replied about the PDF fonts</span>
+$ <span class="g">os-brain task done 3</span>     <span class="c"># or: task drop 3</span>
+$ <span class="g">os-brain task reopen 3</span>   <span class="c"># back to open, from any state</span>
+$ <span class="g">os-brain task snooze 1 --until "in 2 hours"</span>
+<span class="o">#1 snoozed to 2026-11-21 01:58 (this occurrence only; still every mon at 09:00)</span>
+$ <span class="g">os-brain task set 2 --body "sent 20 Nov, chase Friday" --when "2026-11-27 09:00"</span>
+<span class="o">#2 updated (body, when): ask whether the vendor replied about the PDF fonts
+  due 2026-11-27 09:00</span>
+$ <span class="g">os-brain task list --all</span>   <span class="c"># closed ones too; --state open|waiting|done|dropped filters</span>
+<span class="o">[ ] #1   rotate the staging certificate  (due 2026-11-23 09:00 · every mon at 09:00 · snoozed to 2026-11-21 01:58)
+[~] #2   ask whether the vendor replied about the PDF fonts  (waiting on someone else · ...)
+[x] #3   check the invoice totals report</span>
+$ <span class="g">os-brain task due</span>        <span class="c"># what is owed right now, without marking it delivered</span></pre>
+    <p>A task is open, waiting, done or dropped. Waiting means it is still owed but the next move is someone else's. It stays on the list marked <code>[~]</code> and still shows up when due, so the date on a waiting task is the day to chase it. <code>done</code>, <code>drop</code>, <code>wait</code> and <code>reopen</code> work from any state.</p>
+    <p><code>task set &lt;id&gt;</code> changes a task in place: <code>--title</code>, <code>--body</code>, <code>--owner</code>, <code>--scope</code> and <code>--when</code> (<code>none</code> clears the schedule). Only the flags you pass change anything. Do not drop a task and add it again to change it: the new one gets a new id and the old one's history stops.</p>
+    <p>A typo is an error. An unknown subcommand, a flag that subcommand does not read or a missing id is refused before anything runs. It never falls back to printing the list, which would look like success.</p>
+<pre>$ <span class="g">os-brain task done 2 --owner user</span>
+<span class="r">task done does not take --owner; to edit a task use task set &lt;id&gt; --owner</span></pre>
+
+    <h2 id="when">Schedules <a class="anchor" href="#when">#</a></h2>
+    <p><code>--when</code> takes the time the way people say it. These are the forms it reads:</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Form</th><th>Means</th></tr>
+      <tr><td>in 3 hours</td><td>once, relative to now</td></tr>
+      <tr><td>tomorrow 9am</td><td>once, tomorrow</td></tr>
+      <tr><td>5pm</td><td>once, today at that time</td></tr>
+      <tr><td>2026-08-09 14:00</td><td>once, on that date (a bare date works too)</td></tr>
+      <tr><td>every 5 hours</td><td>repeating, on an interval</td></tr>
+      <tr><td>daily 17:00</td><td>repeating, every day</td></tr>
+      <tr><td>every monday 9am</td><td>repeating, every week on that day</td></tr>
+      <tr><td>monthly 1 09:00</td><td>repeating, on that day of each month</td></tr>
+    </table>
+    </div>
+    <p>Anything else is refused with that list, so a schedule cannot be half understood. Weekday names on their own ("friday 9am") are not a one-off form: use the date. A repeating task moves to its next occurrence when you close the current one, instead of piling up the occurrences you missed.</p>
+
+    <h2 id="delivery">How tasks reach you and what they cannot do <a class="anchor" href="#delivery">#</a></h2>
+    <div class="note">
+      <strong>Tasks only show up when a session runs.</strong> A due task appears in the brief, with the prompt hook on every message and at the end of a session. Nothing wakes a machine or acts on its own, so a task on a project nobody opens for two weeks waits two weeks. Say so when someone asks for a weekly reminder: they may have meant an alarm and this is not an alarm.
+    </div>
+    <p>Every <code>task add</code> prints the same warning, so nobody has to remember it:</p>
+<pre><span class="o">  Delivered when a session is open and somebody is typing &mdash; nothing here wakes a machine or acts unattended.</span></pre>
+    <p>A task nobody answers keeps coming back but not forever. After three unanswered deliveries it says it has been offered three times without being acknowledged and asks whether to keep it, snooze it or drop it. A reminder that keeps arriving with no way to answer it turns into something people scroll past and the brief is built so that none of its signals end up like that.</p>
+
+    <h2 id="todo">The list as a file <a class="anchor" href="#todo">#</a></h2>
+<pre>$ <span class="g">os-brain task todo --out TODO.md</span>
+<span class="r">TODO.md is inside a git repository and is not gitignored.</span>
+<span class="o">  gitignore it, then re-run   no flag needed, and the usual answer
+  a path outside the project  needs --allow-outside
+  commit it deliberately      needs --allow-tracked</span></pre>
+    <p><code>task todo</code> writes the ordered list to a file on request and follows the same safety rules as every other file the brain writes. It will not overwrite a file it did not create, write through a symbolic link, write outside the project without <code>--allow-outside</code> or write to a path git would track without <code>--allow-tracked</code>. Every task is in that file in cleartext, so add it to <code>.gitignore</code> or pass the flag on purpose.</p>
+
+    <h2 id="open">What is outstanding <a class="anchor" href="#open">#</a></h2>
+<pre>$ <span class="g">os-brain open</span>
+<span class="o">## WHAT IS OPEN &mdash; invoices, answered from the brain at 2026-11-20 23:58
+
+OPEN TASKS (2)  &mdash; bodies in `os-brain task list` or `os-brain open --full`
+  [ ] #1   rotate the staging certificate  (due 2026-11-23 09:00 · every mon at 09:00 · ...)
+  [~] #2   ask whether the vendor replied about the PDF fonts  (waiting on someone else · ...)
+
+WHAT ACTUALLY HAPPENED
+  2026-11-20 23:58 [task] task #2 edited (body, when): ask whether the vendor replied about the PDF fonts
+  2026-11-20 23:58 [task] task #3 done (was open): check the invoice totals report
+  ...</span></pre>
+    <p>"Where did we leave off?" is a question a session would otherwise answer by re-reading the git log and a long TODO file. <code>open</code> answers it from the brain: open tasks, work in flight and what the activity log says just happened. <code>--full</code> adds task bodies and longer extracts and <code>-n</code> sets how many items it shows. The prompt hook adds the same block, unasked, when your message reads like that question ("what's next?").</p>
+
+    <h2 id="measures">Measures <a class="anchor" href="#measures">#</a></h2>
+    <p>A memory tells you what is true. A measure tells you what a number was and which way it is going. A reading stored as a memory can be found but not trended, which is usually the only reason it was taken.</p>
+<pre>$ <span class="g">os-brain measure add "pdf render p95" 1840 --unit ms --date 2026-11-02 --ref "grafana:invoices"</span>
+<span class="o">#1 pdf_render_p95 = 1840 ms on 2026-11-02</span>
+$ <span class="g">os-brain measure add "pdf render p95" 910 --unit ms --date 2026-11-10 --note "after the font cache fix"</span>
+<span class="o">#2 pdf_render_p95 = 910 ms on 2026-11-10  ↓ -930 since 2026-11-02</span>
+$ <span class="g">os-brain measure add "PDF_Render-p95" 620 --unit ms</span>
+<span class="o">#3 pdf_render_p95 = 620 ms on 2026-11-20  ↓ -290 since 2026-11-10</span>
+
+$ <span class="g">os-brain measure series "pdf render p95"</span>   <span class="c"># --from / --to / -n narrow it</span>
+$ <span class="g">os-brain measure list</span>                    <span class="c"># every series, breaches first</span>
+$ <span class="g">os-brain measure forget 5</span>                <span class="c"># one reading, by id</span></pre>
+    <p>Readings are not searched or ranked at all. That is on purpose: <b>a number must never push a fact down.</b> A p95 taken this morning is newer than every decision in the brain and if it were ranked the same way it would land on top of all of them. Measures still appear in the brief, in <code>map</code>, in <code>stats</code> and in <code>recall</code> when the question names a series.</p>
+    <ul>
+      <li><b>The key is folded</b>, so <code>pdf render p95</code>, <code>PDF_Render-p95</code> and <code>pdf-render-p95</code> are one series. The label keeps whatever was typed first.</li>
+      <li><b><code>--date</code> is when it was measured</b>, not when it was typed.</li>
+      <li><b><code>--ref</code> is where the number came from</b>: a dashboard, a screen, a report. A measure without provenance is a number somebody remembers.</li>
+      <li><b>Keep <code>--unit</code> the same for a key.</b> A reading in another unit is stored but <code>doctor</code> reports the series, because its trend is now arithmetic on unlike numbers.</li>
+      <li><b>An unknown key returns nothing</b>, with the known keys as a hint. It never falls back to dumping every series.</li>
+    </ul>
+    <p>Other flags: <code>--label</code>, <code>--why</code>, <code>--source</code>, <code>--confidence</code> and <code>--scope</code>. <code>export</code> carries measures and <code>import</code> restores them only into a project that has none. Readings have no identity (two on one day is a real series, not a duplicate), so there is no safe merge and a second import would double the history.</p>
+
+    <h3 id="bands">Limits: silent until you set one</h3>
+<pre>$ <span class="g">os-brain measure limit "pdf render p95" --high 1000 --better down --why "the invoice SLO"</span>
+<span class="o">band for pdf_render_p95: low= high=1000 better=down</span>
+$ <span class="g">os-brain measure add "pdf render p95" 1250 --unit ms</span>
+<span class="o">#4 pdf_render_p95 = 1250 ms on 2026-11-20  ↑ +630 since 2026-11-20</span>
+<span class="r">[brain] pdf_render_p95 is above its declared ceiling of 1000: the invoice SLO</span>
+
+$ <span class="g">os-brain measure series "pdf render p95"</span>
+<span class="o">! pdf render p95         1250 ms  ↑ +630 since 2026-11-20 (worse)   n=4   ABOVE 1000
+  █▂▁▄   min 620 · mean 1155 · max 1840
+
+  2026-11-02        1840 ms        !above   grafana:invoices
+  2026-11-10         910 ms         after the font cache fix
+  2026-11-20         620 ms
+  2026-11-20        1250 ms        !above</span></pre>
+    <p><b>A number with no limit set is recorded and never judged.</b> Most numbers have no right answer and a tool that made one up would start complaining about readings nobody asked it to watch. Set a limit (<code>--low</code>, <code>--high</code> and which way is <code>--better</code>) and a reading outside it is flagged on the write, in <code>list</code>, in <code>doctor</code> and in every brief until it is back inside.</p>
+    <p>Do not use a measure for something that happened once: that is a memory. Do not use a memory for the fifth reading of a number you already track.</p>
+
+    <h2 id="leads">Leads for sales work <a class="anchor" href="#leads">#</a></h2>
+    <p>A brain is not only for code. <code>init</code> puts one in any directory an agent works in, including a sales or outreach folder. There, what has to carry over between sessions is who was contacted and what happens next.</p>
+<pre>$ <span class="g">os-brain lead add --name "Jane Doe" --company "Acme" --role CTO \
+    --channel email --segment agency --value-est 12000 \
+    --next-action "send the sample invoice" --next-date 2026-11-27</span>
+<span class="o">lead #1 added: Jane Doe @ Acme [new]</span>
+
+$ <span class="g">os-brain lead list</span>   <span class="c"># --status and --segment filter it</span>
+<span class="o">#1 [new] Jane Doe @ Acme (agency) $12,000 | next: send the sample invoice (2026-11-27)
+1 leads, pipeline value $12,000</span>
+
+$ <span class="g">os-brain lead update 1 --status replied --append-note "asked about VAT on credit notes"</span>
+$ <span class="g">os-brain lead show 1</span>
+$ <span class="g">os-brain lead pipeline</span>   <span class="c"># also: lead hot, lead next</span></pre>
+    <p>Each lead has a stage (<code>new researching contacted replied engaged demo trial negotiating won lost skip</code>), the next action and its date. Use <code>--append-note</code> so the history is kept, since <code>--notes</code> replaces it. <code>add</code> and <code>update</code> also take <code>--url</code>, <code>--email</code> and <code>--tier</code>. On a lead <code>--tier</code> is free text for your own segments, unrelated to the decay tiers memories have. Memories about one lead go in the scope <code>lead:&lt;id&gt;</code>.</p>
+    <p>It is optional and it stays out of the brief until a lead exists. A sales tracker nobody asked for would be noise in every project that sells nothing. Text in a lead that looks like a credential is refused and, unlike most commands, <code>lead</code> has no <code>--allow-secret</code>: nothing about a sales note needs to carry a key.</p>
+
+    <h2 id="log">The activity log <a class="anchor" href="#log">#</a></h2>
+<pre>$ <span class="g">os-brain log "deployed 1.4 to staging" --kind deploy</span>
+<span class="o">logged event #7 [deploy] deployed 1.4 to staging</span>
+$ <span class="g">os-brain events</span>
+<span class="o">2026-11-21 00:04 [deploy] (global) deployed 1.4 to staging
+2026-11-20 23:58 [task] (global) task #3 done (was open): check the invoice totals report</span></pre>
+    <p>Memories say what is true. The log says what happened. It only grows and it is never ranked against memories. Task changes are logged for you, which is how <code>open</code> can say what the last session actually did. Declare the kinds a project uses with <code>os-brain kind</code>, the same way scopes are declared, so <code>map</code> can spot a kind somebody made up by a typo.</p>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

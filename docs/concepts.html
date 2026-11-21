@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The memory model</title>
+<meta name="description" content="Memory types, decay tiers, how recall orders results, scopes, confidence and trust, corrections, guardrails and review dates. The model every refusal in os-brain follows from.">
+<link rel="canonical" href="https://chka.github.io/os-brain/concepts.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="doc-head">
+  <div class="wrap">
+    <div class="kicker">Docs · the memory model</div>
+    <h1>What a memory is<br>and why one<br>comes <em>first</em>.</h1>
+    <p class="lede">Read this once. Every command, default and refusal in os-brain follows from what is on this page and the reasons given here are the ones the code gives in its own comments.</p>
+  </div>
+</header>
+
+<div class="wrap doc">
+  <aside class="toc">
+    <div class="t">On this page</div>
+    <a href="#glossary">The words, in plain terms</a>
+    <a href="#anatomy">What a memory holds</a>
+    <a href="#tiers">Types and how fast they fade</a>
+    <a href="#ranking">How results are ordered</a>
+    <a href="#scopes">Where a memory applies</a>
+    <a href="#confidence">How sure and from where</a>
+    <a href="#supersession">Corrections</a>
+    <a href="#duplicates">Saving the same thing twice</a>
+    <a href="#provenance">Is this fact still current?</a>
+    <a href="#review">Facts that need a recheck</a>
+    <a href="#guardrails">Guardrails and rules</a>
+    <a href="#brief">What your agent gets at the start</a>
+    <a href="#notmemories">What is not a memory</a>
+    <a href="#worth">What is worth storing</a>
+  </aside>
+
+  <main class="doc-body">
+
+    <h2 id="glossary">The words, in plain terms <a class="anchor" href="#glossary">#</a></h2>
+    <p>One sentence each. The rest of the page explains how they work.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Word</th><th>What it means</th></tr>
+      <tr><td>brief</td><td>The short handover your agent gets before its first turn: the rules, how you like to work, pinned facts and the state of the code. It is capped at 6000 bytes by default (about 1.5k tokens).</td></tr>
+      <tr><td>recall</td><td>A search of the memories with the best match first. You can run it, the agent can run it and a hook runs it on every message you type.</td></tr>
+      <tr><td>scope</td><td>A label such as <code>deploy:prod</code> that says where a memory applies. A narrow scope sees the wider ones above it, never the other way round.</td></tr>
+      <tr><td>tier</td><td>The shelf life a memory gets from its type. It decides how fast newer facts start to rank above it.</td></tr>
+      <tr><td>supersede</td><td>To save a correction that replaces an older memory, so a question asked in the old words gets the new answer.</td></tr>
+      <tr><td>guardrail</td><td>A memory of type <code>policy</code> or <code>constraint</code>. It goes into every brief, pinned or not.</td></tr>
+      <tr><td>axiom</td><td>A rule that holds in every project on the machine, shown at the top of each brief. <a href="axioms.html">The defaults are listed here.</a></td></tr>
+      <tr><td>hook</td><td>A command your agent runs by itself at a fixed moment, such as when a session opens. The brain reaches the model without the model having to ask.</td></tr>
+      <tr><td>shared store</td><td>One file every project on the machine reads, at <code>~/.claude/os-brain/brain.db</code>. It holds axioms, notes and the project index (no project's memories unless that project chose to move in).</td></tr>
+    </table>
+    </div>
+
+    <h2 id="anatomy">What a memory holds <a class="anchor" href="#anatomy">#</a></h2>
+    <p>A memory is a title, a body and a set of fields that decide how it ages and where it ranks. Each field has fixed values. None of them is free text the tool has to guess at.</p>
+    <div class="table-scroll">
+    <table class="flags">
+      <tr><th>Field</th><th>What it decides</th></tr>
+      <tr><td>title</td><td>Together with scope, it says which memory this is. Case, punctuation and accents are ignored, so saving the same title again refines that memory in place instead of adding a second copy.</td></tr>
+      <tr><td>body</td><td>The fact. Write it for a stranger reading it six months from now, not for the session saving it.</td></tr>
+      <tr><td>type</td><td>How fast it fades, whether a commit can make it wrong and whether it gets a review date.</td></tr>
+      <tr><td>scope</td><td>Where it applies. Levels are split by <code>:</code> and a memory is seen from its own level and the ones below it.</td></tr>
+      <tr><td>confidence</td><td><code>confirmed</code>, <code>reported</code> or <code>assumed</code>. It helps break ties when ranking.</td></tr>
+      <tr><td>importance</td><td>1 to 5, with 3 as neutral. How much it matters, not how well it matches.</td></tr>
+      <tr><td>source</td><td>Where the fact comes from. You need one to save something as confirmed.</td></tr>
+      <tr><td>trust</td><td><code>stated</code>, <code>imported</code> or <code>external</code>. Where the memory came from, which is a different question from how solid it is.</td></tr>
+      <tr><td>source_commit</td><td>Added by itself on the types a commit can make wrong. It is how recall tells you whether the code has moved.</td></tr>
+      <tr><td>valid_from / valid_to</td><td>When the fact became true and when it stops being true, for facts with known dates.</td></tr>
+      <tr><td>review</td><td>A date to check the fact again. Set by default on <code>infra</code> and <code>access</code>.</td></tr>
+      <tr><td>superseded_by</td><td>The correction that replaced it. Recall follows this link to the newer fact.</td></tr>
+      <tr><td>pin</td><td>Always in the brief.</td></tr>
+      <tr><td>session</td><td>Which session saved it. It matters once more than one agent works on a project and the <a href="mind.html#ladder">ladder</a> reads it.</td></tr>
+    </table>
+    </div>
+
+    <h2 id="tiers">Types and how fast they fade <a class="anchor" href="#tiers">#</a></h2>
+    <p>The type you pick sets the shelf life. It is the choice that matters most when you save a memory, which is why in practice you always pass <code>--type</code>. Leave it off and you get <code>note</code>, a plain document with no weight.</p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Tier</th><th>Half-life</th><th>Weight</th><th>Types</th></tr>
+      <tr><td>A</td><td>never decays</td><td>1.30</td><td><code>infra</code> <code>access</code> <code>gotcha</code> <code>incident</code></td></tr>
+      <tr><td>B</td><td>never decays</td><td>1.20</td><td><code>decision</code> <code>constraint</code> <code>commitment</code></td></tr>
+      <tr><td>C</td><td>60 days</td><td>1.00</td><td><code>preference</code> <code>relationship</code></td></tr>
+      <tr><td>D</td><td>4 days</td><td>0.70</td><td><code>state</code></td></tr>
+      <tr><td>N</td><td>never decays</td><td>1.00, neutral</td><td><code>knowledge</code> <code>brand</code> <code>sop</code> <code>process</code> <code>standard</code> <code>policy</code> <code>report</code> <code>note</code></td></tr>
+    </table>
+    </div>
+    <p>An unknown type is refused with the list of valid ones. <code>--type task</code> gets a pointer to <code>os-brain task add</code> as well, because a task is <a href="tasks.html">its own table</a> with a schedule and a state.</p>
+    <p><b>Preferences fade in search results but not in the brief.</b> A <code>preference</code> is tier C, so in a search it slowly gives way to newer facts. The brief's "how they want to work" section ignores fading. It takes up to eight preferences and relationships, picked by importance and by when they were last updated. A rule you stated once, such as "answers first, reasoning after", keeps showing up at the start of every session until you replace it or more important ones push it out of those eight. Pin it if it must always be there.</p>
+    <p>Fading never deletes. A tier D memory a month past its half-life is still there and an exact search still finds it. It just no longer ranks above things that still matter. That is what you want from "the box is rebooting" and nobody has to remember to clean up.</p>
+
+    <h3><code>incident</code> is tier A, not tier D</h3>
+    <p>An outage feels short-lived but the record of it is not. What happened to a system stays true and an incident record is worth most to whoever asks about it months later.</p>
+
+    <h2 id="ranking">How results are ordered <a class="anchor" href="#ranking">#</a></h2>
+    <p>Recall works in two steps. First it finds the memories that match your words. Then it puts them in order.</p>
+    <h3>Finding the candidates</h3>
+    <p>The search is full-text, using SQLite's built-in FTS5 index. Any word of your question can find a memory. A memory then stays only if it holds most of the question's words: all of them for a one or two word query, three in five (rounded up) for a longer one. When nothing gets that far, which is normal for a full sentence, recall keeps the weaker matches and says so on its first line (<code>"loose": true</code> in <code>--json</code>).</p>
+    <h3>Ordering them</h3>
+<pre>score = relevance × coverage × recency × <span class="g">stakes</span> × scope
+
+  relevance  <span class="c">how strongly the words matched, mapped onto 0.35..1 so a
+             matched row can never score as if it had not matched</span>
+  coverage   <span class="c">the share of your question the memory holds: all of
+             it scores 1, half of it 0.5</span>
+  recency    <span class="c">0.5 ^ (days / tier half-life), or 1.0 for the tiers
+             that never decay</span>
+  stakes     <span class="c">tier × (importance / 3) × usage × confidence,
+             clamped to the band 0.70 .. 1.43</span>
+  scope      <span class="c">when you ask in a scope: 1.6 for that scope, 0.25 less
+             per step out to its parents, never below 0.8</span></pre>
+    <p>A pinned memory doubles its score only when you browse with nothing to match. When you ask a specific question a pin does not push it up, since it is in every brief anyway.</p>
+
+    <h3>Why the stakes term has a cap</h3>
+    <p>It had none at first. Measured over ten real queries on a brain of 571 memories, how well the words matched varied by 1.12x while the multipliers varied by 43.75x. In practice the multipliers decided everything: <b>54% of result pairs came back out of word-match order</b>, some moved twelve places and in every worst case the memory pushed down was the one that answered the question.</p>
+    <p>The rule now is that <b>what kind of memory it is breaks ties and never beats what matched.</b> The cap is the widest gap between tier weights (1 / 0.70), so types still rank in their usual order and only several signals stacking up is held back.</p>
+    <p>Fading sits outside the cap on purpose. It says whether something is still <em>true</em>, not how much it matters, so a four-day memory that is thirty days old can sink out of sight.</p>
+
+    <h3>The usage term</h3>
+    <p>A memory that keeps coming back in results gets a small boost with a ceiling: <code>1 + min(0.15 × ln(1+uses), 0.5)</code>. Every recall counts as a use unless you pass <code>--no-touch</code>. That flag exists so cleanup runs and scripts do not pump up the very numbers they are checking.</p>
+
+    <h2 id="scopes">Where a memory applies <a class="anchor" href="#scopes">#</a></h2>
+    <p>A scope is a path with levels split by <code>:</code>. A search sees its own level and every level above it, never the levels beside or below.</p>
+<pre>$ <span class="g">os-brain recall "cert renewal" --scope deploy:prod</span>
+<span class="k">#8</span>  <span class="c">[deploy:prod/infra]</span> <span class="o">(score 1.692)</span> prod invoices run behind the eu edge proxy
+      <span class="o">cert renewal is on the proxy, not the app</span>
+
+<span class="c">sees:       deploy:prod, deploy, global
+never sees: deploy:staging, where a memory about staging certificates sits</span></pre>
+    <p>Everything defaults to <code>global</code>, which means "everywhere in this project", not "everywhere in the world". You declare scopes in <code>brain.json</code> with <code>os-brain scope add deploy:prod --desc "..."</code>. A save into a scope nobody declared still works but warns you and names the command that declares it. <code>os-brain map</code> compares what is declared with what is actually stored, so a scope someone made up by a typo shows up under UNDECLARED SCOPES IN USE.</p>
+    <p>Use scopes when a project has truly separate areas. Two or three are worth it. A dozen is a filing system you will stop keeping up and a memory left in <code>global</code> is still found.</p>
+
+    <h2 id="confidence">How sure and from where <a class="anchor" href="#confidence">#</a></h2>
+    <p>Confidence says how sure the fact is. Trust says where it came from. The brain keeps both.</p>
+    <div class="table-scroll">
+    <table>
+      <tr><th>Confidence</th><th>Weight</th><th>Means</th></tr>
+      <tr><td>confirmed</td><td>1.15</td><td>It has a source somebody else could check: a path, a command, a URL, a commit or the user saying so.</td></tr>
+      <tr><td>reported</td><td>1.00</td><td>The default. Believed, not proven.</td></tr>
+      <tr><td>assumed</td><td>0.80</td><td>Worked out, not checked. Kept because losing it would be worse and ranked lower for it.</td></tr>
+    </table>
+    </div>
+    <p><code>high</code>, <code>medium</code> and <code>low</code> also work and mean the same three. Other tools use those words and translating them is better than quietly saving a value nothing understands. A value that is neither is refused.</p>
+    <p><b>Your agent cannot just call something confirmed.</b> It needs a source:</p>
+<pre>$ <span class="g">os-brain remember --type note --confidence confirmed \
+    --title "rounding happens per line, not per invoice total" --body "..."</span>
+<span class="r">refusing 'confirmed': nothing here can be checked by anyone who was not in this session.</span>
+<span class="o">  'confirmed' outranks everything else forever, so it takes evidence, not a self-assessment.
+  Add --source "&lt;file, command or URL&gt;", --ref "&lt;path:line&gt;", or --source "stated by the user"
+  (the phrase itself, not a source that contains the word); or store it as --confidence reported.</span></pre>
+    <p>A standing preference has no source but the person who said it, so <code>--source "stated by the user"</code> counts. <code>os-brain prefer --confirmed</code> sets that for you.</p>
+    <p>Trust is a separate field. <code>stated</code> is the default and means it came from this project's own work. <code>imported</code> is set on everything that arrives through <code>import</code> or <code>absorb</code>. <code>external</code> marks a claim from outside. An imported dump is outside input like any other and the label stays on it so a later session can tell.</p>
+
+    <h2 id="supersession">Corrections <a class="anchor" href="#supersession">#</a></h2>
+    <p>A markdown file has no way to say that one statement replaced another. The brain does.</p>
+<pre>$ <span class="g">os-brain remember --type decision --supersedes 2 \
+    --title "Invoices render as PDF in the worker queue, never in the browser" \
+    --body "moved off the request path 2026-11-02; large invoices timed out the HTTP handler"</span>
+<span class="o">remembered #4 [global/decision] Invoices render as PDF in the worker queue, never in the browser (supersedes #2)</span>
+
+$ <span class="g">os-brain recall "PDF browser"</span>
+<span class="k">#4</span>  <span class="c">[global/decision]</span> <span class="o">(score 0.420)</span> Invoices render as PDF in the worker queue, never in the browser
+      <span class="o">moved off the request path 2026-11-02; large invoices timed out the HTTP handler
+      matched the RETRACTED #2 (2026-11-20): Invoices render as PDF on the server, never in the browser</span></pre>
+    <p>The new memory takes over the old one's identity. The old one stays as history with a <code>superseded_by</code> link and recall follows that link: <b>a search in the old words gets the current fact</b>, not both at equal weight. <code>--all</code> shows the replaced versions when you want the history.</p>
+    <p>Two guards protect this:</p>
+    <ul>
+      <li><code>forget</code> refuses to delete a memory that replaced others. Deleting it would put the facts it withdrew back into recall as live ones, so the refusal lists them and asks you to supersede it with a correct version instead (or <code>--force</code> to accept them coming back).</li>
+      <li><code>--supersedes</code> on a memory that another correction already replaced is refused as a fork. You chain onto the newer correction, drop <code>--supersedes</code> if both facts are true or pass <code>--fork-ok</code>. Two current versions of one fact is exactly what corrections are meant to stop.</li>
+    </ul>
+    <p><code>os-brain update &lt;id&gt; --unsupersede</code> clears a link made by mistake and leaves both memories standing.</p>
+
+    <h2 id="duplicates">Saving the same thing twice <a class="anchor" href="#duplicates">#</a></h2>
+    <p>A memory is identified by its scope and its title. Saving the same title again refines that memory in place. If the body is different, the brain refuses until you pass <code>--update</code> (the old body is kept in history) or <code>--supersedes</code>, so a careless save cannot overwrite a fact.</p>
+    <p>The harder case is a <em>second memory about the same subject</em> under a different title. The brain refuses that too: if half or more of the words in two titles in one scope overlap, the save is blocked and you get the existing id and three ways forward.</p>
+<pre><span class="r">#2 in global is already about this (58% title overlap):</span>
+<span class="o">  stored:  Invoices render as PDF on the server, never in the browser
+  yours:   Invoices render as PDF on the server through the queue
+Storing both would put two answers to one question in the brain. Pick one:</span>
+  <span class="o">the fact CHANGED</span>       <span class="g">--supersedes 2</span>
+  <span class="o">same fact, better words</span>  <span class="g">os-brain update 2 --body ...</span>
+  <span class="o">genuinely separate</span>     <span class="g">--allow-duplicate</span></pre>
+    <p><code>os-brain review</code> also reports duplicates but only after the second copy exists and usually to a different session than the one that made it. The moment of saving is the only time the agent still has the text in hand.</p>
+    <p>Titles under five words are not checked. <code>prod db host</code> and <code>prod db port</code> overlap 0.50 and are different facts. When the check is unsure it lets the save through, which is the right call for a rule of thumb: you get the behaviour the store always had.</p>
+
+    <h2 id="provenance">Is this fact still current? <a class="anchor" href="#provenance">#</a></h2>
+    <p>A memory about the code records the commit it was true at. When recall returns it, you get one of these lines under it:</p>
+<pre><span class="g">tree unchanged since stored (1cbd7d50)</span>
+<span class="o">2 commits since stored (1cbd7d50) &mdash; re-check against source</span></pre>
+    <p>So you still read the files sometimes but only for the facts that need it. The brain tells you which ones are safe to act on without opening anything.</p>
+    <p>Only <code>gotcha</code>, <code>state</code> and <code>incident</code> get the commit stamp. The list is short on purpose: a warning that shows on every memory is a warning everyone learns to skip. A <code>decision</code> never gets one, since only the person who made a decision can make it wrong. Telling a session that a settled call is twelve commits old only invites it to argue the call again.</p>
+    <p><code>os-brain verify &lt;id&gt;</code> stamps a memory as checked today. For a claim about the code it also re-dates it to the current commit, so the freshness line agrees with what you just checked.</p>
+
+    <h2 id="review">Facts that need a recheck <a class="anchor" href="#review">#</a></h2>
+    <p>Some facts change outside your code. A host moves, an IP is reassigned or a key is rotated and nothing in the project records it. There is no commit to count and nobody to correct it, so the fact looks just as current on the day it goes wrong. A session once named a box as staging from a 25-day-old note. It had been production for a fortnight.</p>
+    <p>So <code>infra</code> and <code>access</code> memories get a review date 30 days out by default and the save tells you so. Thirty days because a reminder that fires every week is one everybody learns to scroll past.</p>
+<pre>$ <span class="g">os-brain remember --type infra \
+    --title "TLS terminates at nginx on 8443, not at the app" \
+    --body "the app listens on 127.0.0.1:8080 and never sees a cert"</span>
+<span class="o">remembered #1 [global/infra] TLS terminates at nginx on 8443, not at the app
+  review on 2026-12-20 (default for infra, 30d &mdash; --review &lt;date&gt; to move it, --no-review if it is permanent)</span>
+
+$ <span class="g">os-brain verify 1 --source "checked the nginx config on the box"</span>
+$ <span class="g">os-brain review --stale-days 90</span>   <span class="c"># tier A and B facts nobody has re-checked in 90 days</span></pre>
+
+    <h2 id="guardrails">Guardrails and rules <a class="anchor" href="#guardrails">#</a></h2>
+    <p><code>policy</code> and <code>constraint</code> memories go into every brief, pinned or not. A rule that could lose its place to something more topical would not be a rule. The brief shows up to twenty, most important first. Any beyond that are counted on a line of their own with the command that lists them, never dropped without a word.</p>
+    <p>A rule saved as the wrong type is the common mistake, so the save checks for it. A title that reads like a standing rule ("never", "always", "must not") stored as a type the brief does not always carry gets a warning:</p>
+<pre><span class="o">[brain] this reads as a standing rule and decision is not a type the brief always carries.
+  A rule stored as decision falls out of the brief and then binds nobody: --type constraint keeps it in front of every session.</span></pre>
+    <p>Guardrails are also harder to delete. <code>forget</code> refuses a pinned memory or a guardrail until you have re-read it and pass <code>--force</code>, because the usual reason a session wants a rule gone is that the rule got in its way.</p>
+    <p>Above guardrails sit <a href="axioms.html">axioms</a> (which hold in every project) and house standards (defaults a new project starts from). <a href="sharing.html#axioms">Sharing</a> explains the difference.</p>
+
+    <h2 id="brief">What your agent gets at the start <a class="anchor" href="#brief">#</a></h2>
+    <p>The brief your agent gets when a session opens is not a dump of everything. It is built in order of priority and it has a size limit: <b>6000 bytes by default</b>, about 1.5k tokens. When it runs over, it cuts the least important parts, names what it cut and prints the command to see the rest.</p>
+    <p>The priority decides what gets cut, not the order things are printed in. Guardrails are kept first, then any warning that the brain has shrunk, then how the user wants to be worked with, pinned memories and facts due for review. Axioms, measures, the working tree and what is new come after, with the inbox, standards and the sales pipeline near the end. If something has to go, it goes from the end of that list. Empty sections are left out.</p>
+    <p>The printed order is different. The brief opens with the clock, the project, git and which file the brain is (on this machine only, no accounts). Then come axioms, then this project's own sections with how the user wants to work ahead of guardrails, because it shapes how the agent reads everything below it.</p>
+    <p>Two of the hooks <code>init</code> wires deliver it. <b>SessionStart</b> runs <code>os-brain wakeup</code> before your first turn. <b>UserPromptSubmit</b> runs <code>os-brain hook-recall</code>, which searches the brain for what you just typed and adds what it finds. Neither waits for the model to decide to look. <a href="context.html">Why hooks and not CLAUDE.md</a>.</p>
+
+    <h2 id="notmemories">What is not a memory <a class="anchor" href="#notmemories">#</a></h2>
+    <p>Several things live in the brain but are kept apart from memories on purpose, because mixing them in would throw off the ranking.</p>
+    <ul>
+      <li><b>Measures.</b> A memory tells you what is true. A measure tells you what a number was and which way it is going. Readings are not searched or ranked, so a number can never push a fact down.</li>
+      <li><b>Tasks.</b> A memory is true until something changes it. A task is owed until it is done. Tasks show up through the hooks that already run, so a task on a project nobody opens for two weeks waits two weeks.</li>
+      <li><b>Events.</b> The activity log (<code>os-brain log</code>, <code>os-brain events</code>). It only grows, it is never ranked and it is how you find out what the last session actually did.</li>
+      <li><b>Utterances.</b> What you typed, kept verbatim for 30 days. <a href="mind.html#capture">The user model page</a> covers them.</li>
+    </ul>
+    <p><a href="tasks.html">Tasks, measures and leads →</a></p>
+
+    <h2 id="worth">What is worth storing <a class="anchor" href="#worth">#</a></h2>
+    <p>The real risk is a full brain nobody trusts, which is worse than an empty one. What goes in decides whether anyone reads what comes out.</p>
+    <p>Do not save what the repository already has: how the code is laid out, what a function does, a fix that is in the git history, anything in the project's own instructions file. A session can read those and an out-of-date copy is worse than none.</p>
+    <p>Do save the reasoning nobody wrote down: why the obvious approach was turned down, what broke last time and what it looked like, the limit that is not in any file, the preference the user stated once and expects to stick. <code>init</code> writes <code>brain/BEST-PRACTICES.md</code> into every project, which is the long version. The same file is <a href="https://github.com/chka/os-brain">in the repository</a>.</p>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

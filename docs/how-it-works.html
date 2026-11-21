@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain · how it works</title>
+<meta name="description" content="Six mechanisms a notes file cannot give a coding agent: arrival, ranking, decay, supersession, provenance and refusal, with real os-brain output.">
+<link rel="canonical" href="https://chka.github.io/os-brain/how-it-works.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<section class="banded" id="mechanism">
+  <div class="wrap">
+    <div class="obs" style="max-width:36em;margin-bottom:48px;">
+      <div class="sec-kicker">01 / The mechanisms</div>
+      <h2>Six mechanisms<br>instead of <em>a bigger file</em>.</h2>
+      <p class="sec-body">A markdown file of notes can only grow. Here are six things it cannot do.</p>
+    </div>
+
+    <div class="grid g2 obs">
+      <div class="door">
+        <div class="tag">01 · Arrival</div>
+        <h3>It's there before you type</h3>
+        <p>Open a session and your agent already has the brief: today's date and the part of the day (no more good morning at 11pm), where git stands, your project's rules and how you like to work. Then every prompt you type pulls in the memories that match it. It keeps what you type too (<a href="install.html#capture">here is what it stores</a>). Nothing depends on the agent remembering to look.</p>
+        <a class="more" href="concepts.html">What arrives and in what order →</a>
+      </div>
+      <div class="door">
+        <div class="tag">02 · Ranking</div>
+        <h3>The best match wins</h3>
+        <p>Ask a question and the memories that answer most of it come first. Old news sinks. The part of the project you are working in counts more than the rest. Importance and confidence only break a tie between comparable matches: when they were allowed to do more, the memory that answered the question was sometimes pushed down by twelve places.</p>
+        <a class="more" href="concepts.html">The scoring model →</a>
+      </div>
+      <div class="door">
+        <div class="tag">03 · Decay</div>
+        <h3>Old news fades on its own</h3>
+        <p>"TLS terminates at nginx on 8443" stays true for years. "The box is rebooting" matters for an afternoon. Your agent gives each memory a type when it saves it and the type sets how fast it fades: a <code>state</code> memory has a half-life of about four days, an <code>infra</code> fact never decays. Two weeks later the reboot is buried. Nothing gets deleted.</p>
+        <a class="more" href="concepts.html">Types and tiers →</a>
+      </div>
+      <div class="door">
+        <div class="tag">04 · Supersession</div>
+        <h3>Fix it once</h3>
+        <p>When something changes, your agent saves the new fact as a replacement and the old one stops coming back, even if you ask in the old words. Try to save the same thing twice and the brain stops you, shows what it already has and asks which you meant.</p>
+        <a class="more" href="concepts.html">How corrections work →</a>
+      </div>
+      <div class="door">
+        <div class="tag">05 · Provenance</div>
+        <h3>It knows when a fact may be stale</h3>
+        <p>A memory is stamped with the commit it was stored at. For the types that describe what the code does right now (a <code>gotcha</code>, an <code>incident</code>, a <code>state</code>) recall says whether the code has moved since. Nothing changed: use it. Fourteen commits later: check it against the source first. Facts about the world, such as hosts and keys, get a review date instead.</p>
+        <a class="more" href="concepts.html">Provenance and verification →</a>
+      </div>
+      <div class="door">
+        <div class="tag">06 · Refusal</div>
+        <h3>When in doubt, it does nothing</h3>
+        <p>If it cannot tell what you meant, it stops and says so instead of guessing. A script that searches and finds nothing gets nothing back, never the closest thing. Anything that deletes in bulk shows you the list first and waits for you to say so.</p>
+        <a class="more" href="#guards">What each guard protects →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="recall">
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">02 / Retrieval</div>
+      <h2>Ask the brain before<br>you burn <em>a million tokens</em>.</h2>
+      <p class="sec-body" style="margin-top:18px;">Ask an agent without a brain "why do deploys stop at 06:45?" and watch it dig. It greps for "deploy", reads every markdown file, opens the deploy scripts looking for a comment and scrolls the git log for the commit that moved the time. The real reason (a billing cron that double-sends invoices when a deploy overlaps it) was never written in the code. After all that reading, it may still guess.</p>
+      <p class="sec-body" style="margin-top:14px;">With a brain it is one recall and a few hundred tokens. The answer comes back with where it came from and the last line says the code has not changed since, so your agent can just answer.</p>
+    </div>
+    <div class="obs">
+<pre>$ <span class="g">os-brain recall "billing cron deploys" --scope deploy:prod</span>
+
+<span class="k">#7</span>  <span class="c">[deploy:prod/gotcha]</span> <span class="o">(score 2.101)</span> The billing cron runs
+    at 07:00 UTC, so deploys stop at 06:45 <span class="c">[confirmed]</span>
+      <span class="o">a deploy that overlaps the cron double-sends
+      the morning invoices</span>
+      <span class="c">(stated by the user)</span>
+      <span class="g">tree unchanged since stored (f265c122)</span>
+</pre>
+      <p class="muted" style="font-size:16px;">Memories are filed in nested scopes such as <code>deploy:prod</code>. A search there also sees <code>deploy</code> and anything global, never the other way round.</p>
+<pre>$ <span class="g">os-brain recall "TLS nginx 8443"</span>
+
+<span class="k">#6</span>  <span class="c">[global/infra]</span> <span class="o">(score 1.151)</span> TLS terminates at the
+    load balancer, not nginx
+      <span class="o">moved off nginx in 1.4</span>
+      <span class="r">matched the RETRACTED #4 (2026-11-20): TLS
+      terminates at nginx on 8443, not at the app</span>
+</pre>
+      <p class="muted" style="font-size:16px;">Asked in the old words, recall answers with the correction and says which fact it replaced.</p>
+    </div>
+  </div>
+</section>
+
+<section class="banded" id="guards">
+  <div class="wrap split">
+    <div class="obs">
+      <div class="sec-kicker">03 / When it is not sure</div>
+      <h2>It stops and<br><em>tells you</em>.</h2>
+      <p class="sec-body" style="margin-top:18px;">It never does the biggest thing it could. Every command is checked against three cases before it ships: nothing matches, the filter is empty, the caller made a typo. In each one it stops and tells you what happened.</p>
+      <p class="sec-body" style="margin-top:14px;">On the right, your agent tried to save something the brain already knows. Rather than keep two answers to one question, it asks which one is right.</p>
+    </div>
+    <div class="obs">
+<pre>$ <span class="g">os-brain remember --type gotcha --scope deploy \
+    --title "migrations lock the invoices table so run them before 7am"</span>
+
+<span class="r">#5 in deploy is already about this (82% title overlap):</span>
+  <span class="c">stored:</span>  Migrations lock the invoices table, so they run before 7am
+  <span class="c">yours:</span>   migrations lock the invoices table so run them before 7am
+Storing both would put two answers to one question in the brain. Pick one:
+  <span class="o">the fact CHANGED</span>       <span class="g">--supersedes 5</span>
+  <span class="o">same fact, better words</span>  <span class="g">os-brain update 5 --body ...</span>
+  <span class="o">genuinely separate</span>     <span class="g">--allow-duplicate</span>
+</pre>
+      <ul class="prose" style="font-size:16.5px;">
+        <li>Pinned memories and guardrails (the <code>policy</code> and <code>constraint</code> types) cannot be deleted by accident. Neither can a fact that replaced older ones, because deleting it would put the old facts back into recall as live.</li>
+        <li><code>recall --json</code> with no match returns an empty result, never the whole scope. A script that fed recall into forget once destroyed real memories that way.</li>
+        <li><code>prune</code> refuses to guess what to prune, is a dry run until <code>--apply</code> and backs up the brain before it deletes anything. It stops at 25 unless you add <code>--yes</code> and leaves the types that never fade alone unless you add <code>--i-mean-it</code>.</li>
+        <li>Emptying a whole project is <code>forget --all</code>: a dry run first, then <code>--apply --i-mean-it</code>, with a dump of that project written before anything goes.</li>
+        <li><code>--confidence confirmed</code> is refused unless something a stranger could check backs it: a file, a command, a URL or "stated by the user".</li>
+        <li>Text that looks like a password or a key is refused on every save, unless you mark a false positive with <code>--allow-secret</code>. The brain file is readable only by you (mode 600) and never goes into git.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <div class="obs">
+      <h2>The more you use it,<br>the <em>better</em> it gets.</h2>
+      <p>Free and open source. Any number of projects, for as long as you like.</p>
+<pre>$ <span class="g">go install github.com/chka/os-brain/cmd/os-brain@latest</span>
+$ <span class="g">cd ~/projects/yours && os-brain init</span></pre>
+      <div class="cta-row">
+        <a href="install.html" class="btn btn-solid">Install</a>
+        <a href="docs.html" class="btn btn-ghost">Read the docs</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

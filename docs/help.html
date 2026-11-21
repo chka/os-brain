@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>os-brain · help</title>
+<meta name="description" content="Report an os-brain problem on GitHub, what to include in the report and the checks that answer most surprises first.">
+<link rel="canonical" href="https://chka.github.io/os-brain/help.html">
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap nav-inner">
+    <a href="./" class="brand"><span class="dot"></span>os-brain</a>
+    <input type="checkbox" id="nav-t" class="nav-toggle" aria-label="Show the site menu">
+    <label for="nav-t" class="nav-menu">Menu</label>
+    <div class="nav-links">
+      <a href="how-it-works.html">How it works</a>
+      <a href="docs.html">Docs</a>
+      <a href="agents.html">Agents</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="help.html">Help</a>
+    </div>
+    <div class="nav-actions">
+      <a href="https://github.com/chka/os-brain" class="btn btn-ghost" rel="noopener">GitHub</a>
+      <a href="install.html" class="btn">Install</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" style="padding-bottom:0;">
+  <div class="wrap">
+    <div class="stagger">
+      <div class="kicker">Help</div>
+      <h1>Something wrong?<br><em>Tell us</em>.</h1>
+      <p class="lede">If something is broken, open an issue on GitHub. If something just is not doing what you expected, the checks further down usually answer it first.</p>
+    </div>
+  </div>
+</header>
+
+<div class="wrap" style="padding-top:0;padding-bottom:100px;">
+  <main class="doc-body" style="max-width:46em;">
+
+    <h2 id="tell-us">Reporting a problem</h2>
+    <p>Bugs, wrong output and refusals that make no sense go to <a href="https://github.com/chka/os-brain/issues">github.com/chka/os-brain/issues</a>. os-brain has no reporting command and sends nothing anywhere by itself, so an issue is the only way we hear about it.</p>
+    <p>A report we can act on has these in it:</p>
+    <ol>
+      <li><b>The version.</b> Paste the output of <code>os-brain version</code>, which names the build and the schema version.</li>
+      <li><b>Your system.</b> The operating system and which agent ran the command, if one did.</li>
+      <li><b>What you ran.</b> The exact command with its flags, or the MCP tool call.</li>
+      <li><b>What you expected and what happened instead.</b> Paste the output as it was, refusal messages included. Every refusal names what it protects, which tells us most of what we need.</li>
+      <li><b>The state, if it matters.</b> The output of <code>os-brain doctor</code> and <code>os-brain stats</code>.</li>
+    </ol>
+<pre>$ <span class="g">os-brain version</span>
+<span class="o">os-brain 26110501 (schema v16)</span>
+$ <span class="g">os-brain stats</span>
+<span class="o">memories=6 (pinned 0, superseded 1) [A3 B2 C1] scopes=3 events=3 leads=0
+db=/home/you/src/orchard/brain/brain.db</span></pre>
+    <div class="note warn">
+      <strong>Issues are public.</strong> Your memories are stored in cleartext and the output of <code>recall</code>, <code>brief</code> or <code>export</code> may carry them. Cut anything private before you paste: hostnames, paths, project names, the text of memories. Never attach a <code>brain.db</code> or an export.
+    </div>
+    <p>If you found a security problem, do not describe it in a public issue. Open one that says only that you have a security report and how to reach you. We will arrange a private channel.</p>
+    <p>An agent running os-brain is told the same thing by one of the default <a href="axioms.html">axioms</a>: when os-brain behaves wrongly, tell the user what was run, what was expected and what happened, so they can report it here. It does not work around the problem in silence.</p>
+
+    <h2 id="checks">When it is not doing what you expected</h2>
+    <p>Most surprises are the brain refusing to guess. These four commands answer most of them: which file it opened, which project it thinks this is, which build you have and whether the brain is healthy.</p>
+<pre>$ <span class="g">os-brain env</span>      <span class="c"># paths, the project name, git, the clock</span>
+$ <span class="g">os-brain stats</span>    <span class="c"># counts, then the database path on line two</span>
+$ <span class="g">os-brain doctor</span>   <span class="c"># is the brain in good shape</span>
+$ <span class="g">os-brain version</span></pre>
+
+    <h3 id="no-brief">The session started without the brief</h3>
+    <p>Run <code>os-brain wakeup</code> in the project.</p>
+    <ul>
+      <li>It prints the brief: the hooks are not set up. Run <code>os-brain init</code> again. It replaces the hooks rather than adding more.</li>
+      <li>It says there is no brain here: you are outside the project. Run it from inside, or set <code>OS_BRAIN_HOME</code> to the brain directory.</li>
+      <li>Command not found: the binary is not on this <code>PATH</code>. Your agent's <code>PATH</code> is often not the same as yours.</li>
+      <li>It prints the brief yet the session still shows nothing: some agents run hooks only for new sessions. Open a new one rather than resuming.</li>
+    </ul>
+
+    <h3 id="nothing-found">A search finds nothing</h3>
+    <ul>
+      <li>Read the first line of the result. When no memory holds most of your words, it says the match is loose and that the results are leads, not answers.</li>
+      <li>Use fewer words, or the words a memory's title would use.</li>
+      <li>Search a wider scope. A search in <code>deploy:prod</code> sees <code>deploy</code> and everything global. It never sees a scope filed beside it.</li>
+      <li>If you can open a memory by its id but a search never finds it, <code>os-brain reindex</code> rebuilds the search index.</li>
+    </ul>
+
+    <h3 id="zero">It shows no memories but you know there are some</h3>
+    <p>It opened a different file. <code>os-brain stats</code> prints which one on its second line. A project with its own file and the shared store cannot see each other's memories.</p>
+
+    <h3 id="refused">It refused to do something</h3>
+    <p>Read the message. Every refusal says what it is protecting and how to get past it when you really mean it: a memory that already covers the same thing, a pinned rule, a delete that would bring back facts you corrected, text that looks like a password. Do not work around a refusal you do not understand. That is how memories get lost.</p>
+
+    <h3 id="damaged">Something looks damaged</h3>
+    <p><code>os-brain doctor</code> checks the brain and says what is wrong. <code>os-brain doctor --fix</code> repairs what it can and names the rest. Do not fix the database by hand. <code>wakeup</code> takes a safety copy at most once a day when the store has changed: <code>os-brain backup --list --verify</code> lists the copies and checks each one, <code>os-brain backup --restore &lt;file&gt;</code> shows what would change and adding <code>--apply</code> puts one back.</p>
+
+    <p>The full list is on <a href="troubleshooting.html">the troubleshooting page</a>. Still stuck? <a href="#tell-us">Tell us</a>, with the command you ran and what it printed.</p>
+  </main>
+</div>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="brand" style="font-size:14px;"><span class="dot"></span>os-brain</div>
+    <div class="foot-links">
+      <a href="docs.html">Docs</a>
+      <a href="cli.html">CLI</a>
+      <a href="mcp.html">MCP</a>
+      <a href="editions.html">Editions</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="https://github.com/chka/os-brain">GitHub</a>
+    </div>
+    <div class="host">os-brain is the open source edition of the local brain in <a href="https://ns-brain.fightclub.pro/">ns-brain</a>. MIT licence.</div>
+    <div class="host legal">Saasplex Limited, trading as Stratus5.</div>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.obs').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
