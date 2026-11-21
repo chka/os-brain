@@ -5,25 +5,28 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/overview"
+	"github.com/chka/os-brain/internal/project"
+	"github.com/chka/os-brain/internal/spine"
+	"github.com/chka/os-brain/internal/store"
 )
 
 func cmdContext(c *invocation) error {
 	stdout := c.stdout
-	a := brain.ContextArgs{}
+	a := project.ContextArgs{}
 	pos, err := c.parse()
 	if err != nil {
 		return err
 	}
 	a.Sub, a.Key, a.Value = sub(pos, "list", "set", "rm")
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Context(stdout, a) })
+	return c.store(func(s *store.Store) error { return project.New(s).Context(stdout, a) })
 }
 
 func cmdRegistry(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.RegistryArgs{Kinds: c.cmd == "kind"}
+	a := project.RegistryArgs{Kinds: c.cmd == "kind"}
 	fs.StringVar(&a.Desc, "desc", "", "what it is for")
 	pos, err := c.parse()
 	if err != nil {
@@ -31,13 +34,13 @@ func cmdRegistry(c *invocation) error {
 	}
 	a.Sub, a.Name, _ = sub(pos, "list", "add", "rm")
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Registry(stdout, a) })
+	return c.store(func(s *store.Store) error { return project.New(s).Registry(stdout, a) })
 }
 
 func cmdAxiom(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.AxiomArgs{}
+	a := spine.AxiomArgs{}
 	fs.StringVar(&a.Why, "why", "", "what it prevents")
 	fs.Int64Var(&a.ID, "id", 0, "")
 	pos, err := c.parse()
@@ -53,13 +56,13 @@ func cmdAxiom(c *invocation) error {
 			return err
 		}
 	}
-	return c.store(func(s *brain.Store) error { return s.Axiom(stdout, a) })
+	return c.store(func(s *store.Store) error { return spine.New(s).Axiom(stdout, a) })
 }
 
 func cmdStandard(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.StandardArgs{}
+	a := spine.StandardArgs{}
 	fs.StringVar(&a.Why, "why", "", "")
 	fs.StringVar(&a.Category, "category", "general", "stack | security | deploy | ...")
 	fs.Int64Var(&a.FromID, "from", 0, "lift the text from a memory")
@@ -77,13 +80,13 @@ func cmdStandard(c *invocation) error {
 			return err
 		}
 	}
-	return c.store(func(s *brain.Store) error { return s.Standard(stdout, a) })
+	return c.store(func(s *store.Store) error { return spine.New(s).Standard(stdout, a) })
 }
 
 func cmdDescribe(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.DescribeArgs{}
+	a := overview.DescribeArgs{}
 	fs.StringVar(&a.Does, "does", "", "")
 	fs.StringVar(&a.Provides, "provides", "", "")
 	fs.StringVar(&a.Keywords, "keywords", "", "")
@@ -96,13 +99,13 @@ func cmdDescribe(c *invocation) error {
 		return err
 	}
 	a.Text, a.JSON = strings.Join(pos, " "), c.json()
-	return c.store(func(s *brain.Store) error { return s.Describe(stdout, a) })
+	return c.store(func(s *store.Store) error { return overview.New(s).Describe(stdout, a) })
 }
 
 func cmdPublish(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.PublishArgs{}
+	a := spine.PublishArgs{}
 	fs.StringVar(&a.Why, "why", "", "why other projects should see it")
 	fs.BoolVar(&a.Retract, "retract", false, "take a published lesson back out of the shared index")
 	pos, err := c.parse()
@@ -113,13 +116,13 @@ func cmdPublish(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Publish(stdout, a) })
+	return c.store(func(s *store.Store) error { return spine.New(s).Publish(stdout, a) })
 }
 
 func cmdRelease(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.ReleaseArgs{}
+	a := spine.ReleaseArgs{}
 	fs.StringVar(&a.Notes, "notes", "", "")
 	pos, err := c.parse()
 	if err != nil {
@@ -139,13 +142,13 @@ func cmdRelease(c *invocation) error {
 	if a.Confirm, err = confirmAtTerminal("publishing a release", "Publish this? Type yes: "); err != nil {
 		return err
 	}
-	return c.store(func(s *brain.Store) error { return s.Release(stdout, a) })
+	return c.store(func(s *store.Store) error { return spine.New(s).Release(stdout, a) })
 }
 
 func cmdGlobal(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.GlobalArgs{}
+	a := spine.GlobalArgs{}
 	fs.StringVar(&a.Find, "find", "", "search the project index")
 	fs.StringVar(&a.Recall, "recall", "", "search published lessons")
 	fs.IntVar(&a.N, "n", 10, "")
@@ -153,7 +156,7 @@ func cmdGlobal(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Global(stdout, a) })
+	return c.store(func(s *store.Store) error { return spine.New(s).Global(stdout, a) })
 }
 
 // spineRule reads `<verb> <text>` for axiom and standard. The rule is one argument, and rm

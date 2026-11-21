@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chka/os-brain/internal/brain"
 	"github.com/chka/os-brain/internal/cli"
 	"github.com/chka/os-brain/internal/clitest"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // The MCP server: every CLI command offered as a tool, called through the ordinary CLI
@@ -676,7 +676,7 @@ func TestARemotelyServedBriefDoesNotReportTheServersMachine(t *testing.T) {
 // A shared server must say it serves every project, list them and say how to choose one,
 // in its instructions and in its title. A single-project server still names its project.
 func TestASharedServerSaysEveryProject(t *testing.T) {
-	env := brain.Env{Project: "mtest"}
+	env := store.Env{Project: "mtest"}
 	ins := whereThisBrainIs(env, true, []string{"acme", "mtest"})
 	for _, want := range []string{"EVERY project", "_project", ProjectHeader, "acme, mtest"} {
 		if !strings.Contains(ins, want) {

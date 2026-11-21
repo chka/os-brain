@@ -7,7 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/install"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // How a command finds its brain. A binary on PATH once resolved its brain against its own
@@ -31,14 +32,14 @@ func discoverEnv(t *testing.T) string {
 // A session's shell is often deep inside the project, not at its root.
 func TestDiscoverFindsTheBrainFromASubdirectory(t *testing.T) {
 	root := discoverEnv(t)
-	if err := brain.Init(&bytes.Buffer{}, root, brain.InitArgs{}); err != nil {
+	if err := install.Init(&bytes.Buffer{}, root, install.InitArgs{}); err != nil {
 		t.Fatal(err)
 	}
 	deep := filepath.Join(root, "internal", "server")
 	if err := os.MkdirAll(deep, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	got, ok := brain.DiscoverHome(deep)
+	got, ok := store.DiscoverHome(deep)
 	if !ok {
 		t.Fatal("no brain found from a subdirectory of the project")
 	}
@@ -51,10 +52,10 @@ func TestDiscoverFindsTheBrainFromASubdirectory(t *testing.T) {
 // wired rather than assuming the default brain/ directory.
 func TestDiscoverFindsABrainInstalledUnderACustomDirectory(t *testing.T) {
 	root := discoverEnv(t)
-	if err := brain.Init(&bytes.Buffer{}, root, brain.InitArgs{Dir: "marketing/brain"}); err != nil {
+	if err := install.Init(&bytes.Buffer{}, root, install.InitArgs{Dir: "marketing/brain"}); err != nil {
 		t.Fatal(err)
 	}
-	got, ok := brain.DiscoverHome(root)
+	got, ok := store.DiscoverHome(root)
 	if !ok {
 		t.Fatal("a brain wired by init was not discoverable from the project root")
 	}

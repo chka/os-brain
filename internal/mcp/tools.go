@@ -15,8 +15,8 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/chka/os-brain/internal/brain"
 	"github.com/chka/os-brain/internal/cli"
+	"github.com/chka/os-brain/internal/textguard"
 )
 
 type toolAnnotations struct {
@@ -432,7 +432,7 @@ func quotedWord(r []rune, start int) (string, int, error) {
 		}
 		b.WriteRune(r[j])
 	}
-	return "", 0, fmt.Errorf("args has a %c that is never closed: %s", q, brain.Clip(string(r[start:]), 40))
+	return "", 0, fmt.Errorf("args has a %c that is never closed: %s", q, textguard.Clip(string(r[start:]), 40))
 }
 
 // bareWord reads an unquoted word starting at r[start], up to the next whitespace.

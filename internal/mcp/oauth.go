@@ -38,8 +38,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/fsguard"
 	"github.com/chka/os-brain/internal/netguard"
+	"github.com/chka/os-brain/internal/store"
 )
 
 const (
@@ -122,7 +123,7 @@ func tokenHash(tok string) string {
 }
 
 func oauthStatePath() string {
-	return filepath.Join(brain.ConfigDir(), "mcp-oauth.json")
+	return filepath.Join(store.ConfigDir(), "mcp-oauth.json")
 }
 
 func newOAuthServer(publicURL, password, statePath string) (*oauthServer, error) {
@@ -201,7 +202,7 @@ func (o *oauthServer) persist() error {
 	if err != nil {
 		return err
 	}
-	return brain.WriteFileSafe(o.path, b, brain.WriteOpts{MkdirMode: 0o700})
+	return fsguard.WriteFileSafe(o.path, b, fsguard.WriteOpts{MkdirMode: 0o700})
 }
 
 // mount adds the discovery and authorization routes. The /mcp route stays with the

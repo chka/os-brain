@@ -5,13 +5,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/curate"
+	"github.com/chka/os-brain/internal/hook"
+	"github.com/chka/os-brain/internal/memory"
+	"github.com/chka/os-brain/internal/pyfmt"
+	"github.com/chka/os-brain/internal/recall"
+	"github.com/chka/os-brain/internal/store"
 )
 
 func cmdRemember(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.RememberArgs{}
+	a := memory.RememberArgs{}
 	fs.StringVar(&a.Scope, "scope", "global", "")
 	fs.StringVar(&a.Type, "type", "note", "")
 	fs.StringVar(&a.Title, "title", "", "")
@@ -33,7 +38,7 @@ func cmdRemember(c *invocation) error {
 	fs.StringVar(&a.ReviewOn, "review", "", "")
 	fs.BoolVar(&a.NoReview, "no-review", false,
 		"store no review date, even for a type that defaults to one")
-	fs.StringVar(&a.Trust, "trust", brain.DefaultTrust, "stated | imported | external")
+	fs.StringVar(&a.Trust, "trust", memory.DefaultTrust, "stated | imported | external")
 	fs.StringVar(&a.ValidFrom, "valid-from", "", "the date this became true")
 	fs.StringVar(&a.ValidTo, "valid-to", "", "the date it stops being true")
 	fs.BoolVar(&a.AllowDuplicate, "allow-duplicate", false,
@@ -60,13 +65,13 @@ func cmdRemember(c *invocation) error {
 		return fmt.Errorf("give the title as words or as --title, not both: %q was not stored",
 			strings.Join(pos, " "))
 	}
-	return c.store(func(s *brain.Store) error { return s.Remember(stdout, a) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Remember(stdout, a) })
 }
 
 func cmdRecall(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.RecallArgs{}
+	a := recall.RecallArgs{}
 	fs.StringVar(&a.Scope, "scope", "", "")
 	fs.IntVar(&a.N, "n", 8, "")
 	fs.StringVar(&a.Type, "type", "", "")
@@ -85,7 +90,7 @@ func cmdRecall(c *invocation) error {
 		return err
 	}
 	a.Query, a.JSON = strings.Join(pos, " "), c.json()
-	return c.store(func(s *brain.Store) error { return s.Recall(stdout, a) })
+	return c.store(func(s *store.Store) error { return recall.New(s).Recall(stdout, a) })
 }
 
 func cmdGet(c *invocation) error {
@@ -100,13 +105,13 @@ func cmdGet(c *invocation) error {
 	if err != nil {
 		return err
 	}
-	return c.store(func(s *brain.Store) error { return s.Get(stdout, id, *all, c.json()) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Get(stdout, id, *all, c.json()) })
 }
 
 func cmdUpdate(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.UpdateArgs{}
+	a := memory.UpdateArgs{}
 	title := fs.String("title", "", "")
 	body := fs.String("body", "", "")
 	bodyFile := fs.String("body-file", "", "")
@@ -168,13 +173,13 @@ func cmdUpdate(c *invocation) error {
 	if seen["importance"] {
 		a.Importance = importance
 	}
-	return c.store(func(s *brain.Store) error { return s.Update(stdout, a) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Update(stdout, a) })
 }
 
 func cmdVerify(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.VerifyArgs{}
+	a := memory.VerifyArgs{}
 	fs.StringVar(&a.Confidence, "confidence", "", "")
 	fs.StringVar(&a.Source, "source", "", "")
 	pos, err := c.parse()
@@ -186,13 +191,13 @@ func cmdVerify(c *invocation) error {
 		return err
 	}
 	a.ID, a.JSON = id, c.json()
-	return c.store(func(s *brain.Store) error { return s.Verify(stdout, a) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Verify(stdout, a) })
 }
 
 func cmdForget(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.ForgetArgs{}
+	a := memory.ForgetArgs{}
 	fs.StringVar(&a.Reason, "reason", "", "")
 	fs.BoolVar(&a.Force, "force", false, "")
 	fs.BoolVar(&a.Purge, "purge", false, "destroy it: no archived version kept, every one already held deleted, nothing can restore it")
@@ -221,13 +226,13 @@ func cmdForget(c *invocation) error {
 			"project. Drop --all to delete one")
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Forget(stdout, a) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Forget(stdout, a) })
 }
 
 func cmdPrefer(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.PreferArgs{}
+	a := hook.PreferArgs{}
 	fs.StringVar(&a.Why, "why", "", "what prompted it")
 	fs.StringVar(&a.About, "about", "", "a person, making this a relationship memory")
 	fs.StringVar(&a.Scope, "scope", "global", "")
@@ -245,13 +250,13 @@ func cmdPrefer(c *invocation) error {
 	if a.Text == "" {
 		return fmt.Errorf("the rule is required: os-brain prefer \"<the rule in their words>\"")
 	}
-	return c.store(func(s *brain.Store) error { return s.Prefer(stdout, a) })
+	return c.store(func(s *store.Store) error { return hook.New(s).Prefer(stdout, a) })
 }
 
 func cmdHistory(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.HistoryArgs{}
+	a := memory.HistoryArgs{}
 	fs.Int64Var(&a.ID, "id", 0, "only this memory's archived versions")
 	fs.IntVar(&a.N, "n", 20, "")
 	pos, err := c.parse()
@@ -264,18 +269,18 @@ func cmdHistory(c *invocation) error {
 	if len(pos) > 0 && a.ID == 0 {
 		id, perr := strconv.ParseInt(strings.TrimPrefix(pos[0], "#"), 10, 64)
 		if perr != nil || id <= 0 {
-			return fmt.Errorf("history takes a memory id, and %s is not one", brain.Repr(pos[0]))
+			return fmt.Errorf("history takes a memory id, and %s is not one", pyfmt.Repr(pos[0]))
 		}
 		a.ID = id
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.History(stdout, a) })
+	return c.store(func(s *store.Store) error { return memory.New(s).History(stdout, a) })
 }
 
 func cmdRestore(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.RestoreArgs{}
+	a := memory.RestoreArgs{}
 	fs.BoolVar(&a.Force, "force", false, "roll a live memory back to the archived version")
 	pos, err := c.parse()
 	if err != nil {
@@ -291,13 +296,13 @@ func cmdRestore(c *invocation) error {
 		return err
 	}
 	a.HID, a.JSON = hid, c.json()
-	return c.store(func(s *brain.Store) error { return s.Restore(stdout, a) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Restore(stdout, a) })
 }
 
 func cmdPromote(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.PromoteArgs{}
+	a := curate.PromoteArgs{}
 	fs.StringVar(&a.To, "to", "global", "destination scope")
 	pos, err := c.parse()
 	if err != nil {
@@ -307,7 +312,7 @@ func cmdPromote(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Promote(stdout, a) })
+	return c.store(func(s *store.Store) error { return curate.New(s).Promote(stdout, a) })
 }
 
 func cmdObject(c *invocation) error {
@@ -324,8 +329,8 @@ func cmdObject(c *invocation) error {
 	if err != nil {
 		return err
 	}
-	return c.store(func(s *brain.Store) error {
-		return s.ObjectCmd(stdout, id, *why, c.json())
+	return c.store(func(s *store.Store) error {
+		return memory.New(s).ObjectCmd(stdout, id, *why, c.json())
 	})
 }
 
@@ -339,7 +344,7 @@ func cmdLadder(c *invocation) error {
 	if err != nil {
 		return err
 	}
-	return c.store(func(s *brain.Store) error {
-		return s.LadderCmd(stdout, id, c.json())
+	return c.store(func(s *store.Store) error {
+		return memory.New(s).LadderCmd(stdout, id, c.json())
 	})
 }

@@ -9,7 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/install"
+	"github.com/chka/os-brain/internal/pyfmt"
 )
 
 // agentPromptIn is where init reads the agent choice. It is nil when nobody is at a terminal
@@ -35,11 +36,11 @@ const agentPromptMax = 5
 // "I will do it myself". An answer that names nothing is asked again; running out of input
 // is a refusal before anything is written, never a guess.
 func askAgent(in io.Reader, out io.Writer, root string) (key string, manual bool, err error) {
-	hosts := brain.Hosts()
+	hosts := install.Hosts()
 	fmt.Fprintln(out, "To autowire your agent you need to tell us what agent you want to use:")
 	for i, h := range hosts {
 		mark := ""
-		if brain.Detected(root, h) {
+		if install.Detected(root, h) {
 			mark = "  (found on this machine)"
 		}
 		fmt.Fprintf(out, "  %2d) %s%s\n", i+1, h.Label, mark)
@@ -66,7 +67,7 @@ func askAgent(in io.Reader, out io.Writer, root string) (key string, manual bool
 					return h.Key, false, nil
 				}
 			}
-			fmt.Fprintf(out, "%s is not on the list.\n", brain.Repr(strings.TrimSpace(line)))
+			fmt.Fprintf(out, "%s is not on the list.\n", pyfmt.Repr(strings.TrimSpace(line)))
 		}
 		if rerr != nil {
 			fmt.Fprintln(out)

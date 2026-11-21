@@ -22,7 +22,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/store"
+	"github.com/chka/os-brain/internal/textguard"
 )
 
 // Usage is the general usage text. It is also the list of commands: the MCP tool list and
@@ -124,7 +125,7 @@ func RunJSON(t Transport, argv []string, stdout io.Writer) error {
 // arrived, and project and session are what the caller named (empty: found from the
 // working directory and the environment).
 func runForVia(via callVia, argv []string, stdout io.Writer, project, session string) error {
-	stdout = brain.SafeOutput(stdout)
+	stdout = textguard.SafeOutput(stdout)
 	// Hooks and scripts write `os-brain --json <cmd>`, so the global flag is accepted before
 	// the subcommand as well as after it.
 	globalJSON := false
@@ -145,7 +146,7 @@ func runForVia(via callVia, argv []string, stdout io.Writer, project, session st
 		cmd = "version"
 	}
 	if cmd == "version" {
-		fmt.Fprintf(stdout, "os-brain %s (schema v%d)\n", brain.Version, brain.SchemaVersion)
+		fmt.Fprintf(stdout, "os-brain %s (schema v%d)\n", store.Version, store.SchemaVersion)
 		return nil
 	}
 

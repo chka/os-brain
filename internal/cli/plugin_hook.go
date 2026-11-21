@@ -10,7 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/brief"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // plugin-hook is what an agent's plugin runs, in place of the per-project hooks init writes.
@@ -83,7 +84,7 @@ func runPluginHook(stdout io.Writer, argv []string) error {
 
 	payload := hookStdin()
 	root := pluginProjectRoot(payload)
-	home, found := brain.DiscoverHome(root)
+	home, found := store.DiscoverHome(root)
 	if !found {
 		if sub[0] != "wakeup" {
 			return nil
@@ -92,7 +93,7 @@ func runPluginHook(stdout io.Writer, argv []string) error {
 			"nothing is remembered here. Tell the user it can be created by running " +
 			"`os-brain init` in " + root + "."
 		if emit := flagValue(sub[1:], "emit"); emit != "" {
-			return brain.EmitEnvelope(stdout, emit, msg)
+			return brief.EmitEnvelope(stdout, emit, msg)
 		}
 		_, err := fmt.Fprintln(stdout, msg)
 		return err

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // The servers (MCP, the web UI and the direct-message channel) are commands of this CLI, and
@@ -34,7 +34,7 @@ type Servers struct {
 	// loopback.
 	UI func(host string, port int, openBrowser bool, stdout io.Writer) error
 	// Channel pushes direct messages for env's session over stdin and stdout.
-	Channel func(env brain.Env, stdin io.Reader, stdout io.Writer) error
+	Channel func(env store.Env, stdin io.Reader, stdout io.Writer) error
 }
 
 var servers Servers

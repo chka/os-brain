@@ -8,7 +8,7 @@
 //
 // The proof compares the real spines' project ids before and after the run. It cannot look
 // for temporary paths: the index stores a hash of the project directory, never the directory
-// (see hashRoot in internal/brain), so a leaked row carries no path to recognise. A new id
+// (see HashRoot in internal/store), so a leaked row carries no path to recognise. A new id
 // that appears while the suite runs is reported. The one false alarm is a person creating a
 // brand new project in another terminal during the run, which the message says.
 package testguard

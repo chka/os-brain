@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // Every command has the same shape: register its flags on fs, call c.parse(), then act.
@@ -50,26 +50,26 @@ func runWithVia(via callVia, cmd string, rest []string, stdout io.Writer, fs *fl
 // discoverBrainEnv finds this call's brain directory and builds its Env. It fails closed:
 // if there is no brain it says so and stops, it never invents one. init is the exception,
 // because it is about to create the brain, and so is a probe, which never touches a store.
-func discoverBrainEnv(cmd string, probe bool, project, session string) (brain.Env, error) {
+func discoverBrainEnv(cmd string, probe bool, project, session string) (store.Env, error) {
 	here := os.Getenv("OS_BRAIN_HOME")
 	if !probe {
 		if err := checkCallerEnv(here); err != nil {
-			return brain.Env{}, err
+			return store.Env{}, err
 		}
 	}
 	if here != "" && !probe && cmd != "init" {
 		if err := requireBrainAt(here); err != nil {
-			return brain.Env{}, err
+			return store.Env{}, err
 		}
 	}
 	if here == "" {
 		found, err := discoverHome(cmd, probe)
 		if err != nil {
-			return brain.Env{}, err
+			return store.Env{}, err
 		}
 		here = found
 	}
-	env := brain.NewEnvFor(here, project)
+	env := store.NewEnvFor(here, project)
 	env.Session = session
 	return env, nil
 }
@@ -77,11 +77,11 @@ func discoverBrainEnv(cmd string, probe bool, project, session string) (brain.En
 // checkCallerEnv refuses a hook environment or a repository that points this call at the
 // wrong place before anything is opened.
 func checkCallerEnv(here string) error {
-	if err := brain.CheckHookHome(here); err != nil {
+	if err := store.CheckHookHome(here); err != nil {
 		return err
 	}
 	if cwd, err := os.Getwd(); err == nil {
-		if err := brain.CheckRepoEnv(cwd); err != nil {
+		if err := store.CheckRepoEnv(cwd); err != nil {
 			return err
 		}
 	}
@@ -106,7 +106,7 @@ func discoverHome(cmd string, probe bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if found, ok := brain.DiscoverHome(cwd); ok {
+	if found, ok := store.DiscoverHome(cwd); ok {
 		return found, nil
 	}
 	if probe || cmd == "init" {
@@ -126,7 +126,7 @@ type invocation struct {
 	rest       []string
 	stdout     io.Writer
 	fs         *flag.FlagSet
-	env        brain.Env
+	env        store.Env
 	probe      bool
 	globalJSON bool
 	asJSON     *bool
@@ -154,7 +154,7 @@ func (c *invocation) parse() ([]string, error) {
 func (c *invocation) json() bool { return *c.asJSON }
 
 // dispatch runs one command against env, the discovered brain.
-func dispatch(via callVia, cmd string, rest []string, stdout io.Writer, fs *flag.FlagSet, probe, globalJSON bool, env brain.Env) error {
+func dispatch(via callVia, cmd string, rest []string, stdout io.Writer, fs *flag.FlagSet, probe, globalJSON bool, env store.Env) error {
 	c := &invocation{via: via, cmd: cmd, rest: rest, stdout: stdout, fs: fs, env: env,
 		probe: probe, globalJSON: globalJSON}
 	c.asJSON = fs.Bool("json", false, "machine-readable JSON output")
@@ -315,11 +315,11 @@ func commandHandler(cmd string) func(*invocation) error {
 // closed: a project whose brain.json belongs to ns-brain's team edition has its memories
 // somewhere os-brain cannot read, and the local file it would otherwise open can be a shared
 // store that holds every other project and returns a confident wrong answer.
-func withStore(cmd string, env brain.Env, fn func(*brain.Store) error) error {
+func withStore(cmd string, env store.Env, fn func(*store.Store) error) error {
 	if err := refuseTeamBrain(env); err != nil {
 		return err
 	}
-	s, err := brain.Open(env)
+	s, err := store.Open(env)
 	if err != nil {
 		return err
 	}
@@ -328,6 +328,6 @@ func withStore(cmd string, env brain.Env, fn func(*brain.Store) error) error {
 }
 
 // store runs fn against this call's store.
-func (c *invocation) store(fn func(*brain.Store) error) error {
+func (c *invocation) store(fn func(*store.Store) error) error {
 	return withStore(c.cmd, c.env, fn)
 }

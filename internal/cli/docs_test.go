@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chka/os-brain/internal/brain"
 	"github.com/chka/os-brain/internal/clitest"
+	"github.com/chka/os-brain/internal/install"
 )
 
 // Before the Go binary, each brain carried a Python script at brain/brain that agents ran
@@ -24,7 +24,7 @@ import (
 //   - a line about backups, which names the old file in order to keep it safe.
 func TestDocsDoNotTeachTheRetiredClient(t *testing.T) {
 	for _, doc := range []string{"HOWTO.md", "BEST-PRACTICES.md"} {
-		body, err := brain.AgentDoc(doc)
+		body, err := install.AgentDoc(doc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,12 +95,12 @@ func TestBrainHomeAtANonBrainRefusesInsteadOfCreatingOne(t *testing.T) {
 	}
 }
 
-// The docs exist twice: authored at the repo root and embedded under internal/brain/docs
+// The docs exist twice: authored at the repo root and embedded under internal/install/docs
 // so they travel inside the binary. Two copies of a file always drift and the one that
 // drifts silently is the one nobody edits, which here is the copy that actually ships.
 func TestEmbeddedDocsMatchTheAuthoredOnes(t *testing.T) {
 	for _, name := range []string{"HOWTO.md", "BEST-PRACTICES.md"} {
-		embedded, err := brain.AgentDoc(name)
+		embedded, err := install.AgentDoc(name)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -110,8 +110,8 @@ func TestEmbeddedDocsMatchTheAuthoredOnes(t *testing.T) {
 			t.Fatal(err)
 		}
 		if string(embedded) != string(authored) {
-			t.Errorf("%s differs between the repo root and internal/brain/docs. "+
-				"Copy it across: cp %s internal/brain/docs/", name, name)
+			t.Errorf("%s differs between the repo root and internal/install/docs. "+
+				"Copy it across: cp %s internal/install/docs/", name, name)
 		}
 	}
 }

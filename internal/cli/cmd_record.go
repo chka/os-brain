@@ -6,13 +6,21 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/hook"
+	"github.com/chka/os-brain/internal/lead"
+	"github.com/chka/os-brain/internal/measure"
+	"github.com/chka/os-brain/internal/memory"
+	"github.com/chka/os-brain/internal/overview"
+	"github.com/chka/os-brain/internal/recall"
+	"github.com/chka/os-brain/internal/store"
+	"github.com/chka/os-brain/internal/tasks"
+	"github.com/chka/os-brain/internal/timefmt"
 )
 
 func cmdLog(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.LogArgs{}
+	a := memory.LogArgs{}
 	fs.StringVar(&a.Scope, "scope", "global", "")
 	fs.StringVar(&a.Kind, "kind", "note", "")
 	fs.StringVar(&a.Actor, "actor", "claude", "")
@@ -24,11 +32,11 @@ func cmdLog(c *invocation) error {
 	if err != nil {
 		return err
 	}
-	day, err := brain.ParseDate(*date, "--date")
+	day, err := timefmt.ParseDate(*date, "--date")
 	if err != nil {
 		return err
 	}
-	if a.TS, err = brain.DayToTS(day); err != nil {
+	if a.TS, err = timefmt.DayToTS(day); err != nil {
 		return err
 	}
 	if a.Summary == "" {
@@ -38,13 +46,13 @@ func cmdLog(c *invocation) error {
 		return fmt.Errorf("--summary is required")
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Log(stdout, a) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Log(stdout, a) })
 }
 
 func cmdEvents(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.EventsArgs{}
+	a := memory.EventsArgs{}
 	fs.StringVar(&a.Scope, "scope", "", "")
 	fs.StringVar(&a.Kind, "kind", "", "")
 	fs.IntVar(&a.Since, "since", 0, "days")
@@ -55,7 +63,7 @@ func cmdEvents(c *invocation) error {
 		return err
 	}
 	a.Query, a.JSON = strings.Join(pos, " "), c.json()
-	return c.store(func(s *brain.Store) error { return s.Events(stdout, a) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Events(stdout, a) })
 }
 
 func cmdCapture(c *invocation) error {
@@ -63,7 +71,7 @@ func cmdCapture(c *invocation) error {
 	fs := c.fs
 	// The thesis: what the user said is stored BEFORE the turn is answered. Normally
 	// run by the hook rather than by hand, and it never fails the caller's turn.
-	a := brain.CaptureArgs{}
+	a := hook.CaptureArgs{}
 	fs.StringVar(&a.Session, "session", "", "the session that heard it")
 	pos, err := c.parse()
 	if err != nil {
@@ -71,13 +79,13 @@ func cmdCapture(c *invocation) error {
 	}
 	a.Text = strings.Join(pos, " ")
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.CaptureCmd(stdout, a) })
+	return c.store(func(s *store.Store) error { return hook.New(s).CaptureCmd(stdout, a) })
 }
 
 func cmdUtterances(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.UtterancesArgs{}
+	a := hook.UtterancesArgs{}
 	fs.IntVar(&a.N, "n", 20, "")
 	fs.StringVar(&a.Class, "class", "", "command | taste | directive | exhibit")
 	fs.BoolVar(&a.Unclassified, "unclassified", false, "only what could not be classified")
@@ -85,13 +93,13 @@ func cmdUtterances(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Utterances(stdout, a) })
+	return c.store(func(s *store.Store) error { return hook.New(s).Utterances(stdout, a) })
 }
 
 func cmdWhoami(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.WhoamiArgs{}
+	a := overview.WhoamiArgs{}
 	fs.StringVar(&a.Observe, "observe", "", "record a trait: key=value")
 	fs.StringVar(&a.Evidence, "evidence", "", "what shows it; required with --observe")
 	fs.StringVar(&a.Forget, "forget", "", "drop a trait by key")
@@ -99,7 +107,7 @@ func cmdWhoami(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Whoami(stdout, a) })
+	return c.store(func(s *store.Store) error { return overview.New(s).Whoami(stdout, a) })
 }
 
 func cmdCoverage(c *invocation) error {
@@ -111,8 +119,8 @@ func cmdCoverage(c *invocation) error {
 	if _, err := c.parse(); err != nil {
 		return err
 	}
-	return c.store(func(s *brain.Store) error {
-		return s.CoverageCmd(stdout, *near, c.json())
+	return c.store(func(s *store.Store) error {
+		return recall.New(s).CoverageCmd(stdout, *near, c.json())
 	})
 }
 
@@ -121,7 +129,7 @@ func cmdTask(c *invocation) error {
 	fs := c.fs
 	// Delivery is pull, on hooks that already run. Nothing here schedules anything:
 	// due tasks are shown by hook-recall, wakeup and hook-stop.
-	a := brain.TaskArgs{}
+	a := tasks.TaskArgs{}
 	fs.StringVar(&a.Title, "title", "", "with set: the new title; with add: instead of the words")
 	fs.StringVar(&a.Body, "body", "", "")
 	fs.StringVar(&a.Owner, "owner", "", "user | agent")
@@ -154,7 +162,7 @@ func cmdTask(c *invocation) error {
 			a.Fields = append(a.Fields, f.Name)
 		}
 	})
-	if err := brain.CheckTaskArgs(a.Sub, a.Fields); err != nil {
+	if err := tasks.CheckTaskArgs(a.Sub, a.Fields); err != nil {
 		if _, numeric := strconv.ParseInt(strings.TrimPrefix(a.Sub, "#"), 10, 64); numeric == nil {
 			return fmt.Errorf("%v\n  a task id goes after the subcommand: task set %s --body ...",
 				err, a.Sub)
@@ -165,12 +173,12 @@ func cmdTask(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Task(stdout, a) })
+	return c.store(func(s *store.Store) error { return tasks.New(s).Task(stdout, a) })
 }
 
 // taskPositionals reads what follows the subcommand: the title for add, one task id for the
 // subcommands that act on a task, and nothing for the rest.
-func taskPositionals(a *brain.TaskArgs, pos []string) error {
+func taskPositionals(a *tasks.TaskArgs, pos []string) error {
 	switch {
 	case a.Sub == "add":
 		if a.Title != "" && len(pos) > 0 {
@@ -183,7 +191,7 @@ func taskPositionals(a *brain.TaskArgs, pos []string) error {
 			}
 			a.Title = title
 		}
-	case brain.TaskTakesID(a.Sub):
+	case tasks.TaskTakesID(a.Sub):
 		if len(pos) != 1 {
 			return fmt.Errorf("task %s takes exactly one task id, got %d arguments", a.Sub, len(pos))
 		}
@@ -201,7 +209,7 @@ func taskPositionals(a *brain.TaskArgs, pos []string) error {
 func cmdMeasure(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.MeasureArgs{}
+	a := measure.MeasureArgs{}
 	fs.StringVar(&a.Label, "label", "", "")
 	fs.StringVar(&a.Unit, "unit", "", "")
 	fs.StringVar(&a.Scope, "scope", "", "")
@@ -249,13 +257,13 @@ func cmdMeasure(c *invocation) error {
 		}
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Measure(stdout, a) })
+	return c.store(func(s *store.Store) error { return measure.New(s).Measure(stdout, a) })
 }
 
 func cmdLead(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.LeadArgs{}
+	a := lead.LeadArgs{}
 	fs.StringVar(&a.Name, "name", "", "")
 	fs.StringVar(&a.Company, "company", "", "")
 	fs.StringVar(&a.Channel, "channel", "", "")
@@ -265,7 +273,7 @@ func cmdLead(c *invocation) error {
 	url := fs.String("url", "", "")
 	email := fs.String("email", "", "")
 	segment := fs.String("segment", "", "")
-	status := fs.String("status", "", strings.Join(brain.LeadStatuses, " | "))
+	status := fs.String("status", "", strings.Join(lead.LeadStatuses, " | "))
 	tier := fs.String("tier", "", "")
 	valueEst := fs.Int64("value-est", 0, "")
 	nextAction := fs.String("next-action", "", "")
@@ -308,5 +316,5 @@ func cmdLead(c *invocation) error {
 		}
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Lead(stdout, a) })
+	return c.store(func(s *store.Store) error { return lead.New(s).Lead(stdout, a) })
 }

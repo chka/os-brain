@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // printHelp answers `help` and `help <command>`. Bare `help` used to be the only form, so a
@@ -78,11 +78,11 @@ func helpTail() string {
 		"scopes and event kinds live in brain.json; `os-brain map` reconciles them\n" +
 		"against what is actually stored, `os-brain review` reports hygiene.\n" +
 		"\nMemory types by decay tier:\n" +
-		"  A (never decays): " + tier(brain.TierA) + "\n" +
-		"  B (never decays): " + tier(brain.TierB) + "\n" +
-		"  C (~60d):         " + tier(brain.TierC) + "\n" +
-		"  D (~4d):          " + tier(brain.TierD) + "\n" +
-		"  docs (no decay):  " + tier(brain.DocTypes) + "\n" +
+		"  A (never decays): " + tier(store.TierA) + "\n" +
+		"  B (never decays): " + tier(store.TierB) + "\n" +
+		"  C (~60d):         " + tier(store.TierC) + "\n" +
+		"  D (~4d):          " + tier(store.TierD) + "\n" +
+		"  docs (no decay):  " + tier(store.DocTypes) + "\n" +
 		"\nEvery memory carries a confidence: confirmed (x1.15), reported (x1.0),\n" +
 		"assumed (x0.8). Verify load-bearing facts periodically (os-brain verify <id>);\n" +
 		"`os-brain review` lists the ones nobody has re-checked.\n"

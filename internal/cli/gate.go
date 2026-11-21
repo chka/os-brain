@@ -8,13 +8,14 @@ import (
 	"io"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/fsguard"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // gate runs between finding the brain and dispatching the command, for every CLI command,
 // every hook and every MCP tool call. It holds the checks that are about the call rather
 // than about any one command. handled=true means the call ended here and err is its result.
-func gate(via callVia, cmd string, rest []string, stdout io.Writer, env brain.Env,
+func gate(via callVia, cmd string, rest []string, stdout io.Writer, env store.Env,
 	session string) (handled bool, err error) {
 	event := hookEventFor(via, cmd, rest, stdout, session)
 	refuse := func(e error) (bool, error) {
@@ -45,7 +46,7 @@ func gate(via callVia, cmd string, rest []string, stdout io.Writer, env brain.En
 			return refuse(ferr)
 		}
 		for _, f := range files {
-			if ierr := brain.GuardReadInside(f, env.ProjectRoot()); ierr != nil {
+			if ierr := fsguard.GuardReadInside(f, env.ProjectRoot()); ierr != nil {
 				return refuse(ierr)
 			}
 		}
@@ -138,7 +139,7 @@ func hookNotice(event, msg string) string {
 // edition: memories on a Hive server, or a zero-knowledge brain. os-brain cannot read
 // either, and falling back to a local file would answer confidently from a store that does
 // not hold this project's memories, so it refuses instead.
-func refuseTeamBrain(env brain.Env) error {
+func refuseTeamBrain(env store.Env) error {
 	if where := env.Config.TeamEdition(); where != "" {
 		return fmt.Errorf("this project's brain is %s, which is ns-brain's team edition.\n"+
 			"os-brain is the local edition and cannot read it, and it will not answer from a "+

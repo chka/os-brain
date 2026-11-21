@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/dm"
+	"github.com/chka/os-brain/internal/spine"
+	"github.com/chka/os-brain/internal/store"
 )
 
 func cmdNote(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.NoteArgs{}
+	a := spine.NoteArgs{}
 	fs.StringVar(&a.Ref, "ref", "", "")
 	fs.StringVar(&a.Kind, "kind", "note", "note | prompt")
 	fs.BoolVar(&a.AllowSecret, "allow-secret", false, "store it anyway; it is a false positive")
@@ -55,27 +57,27 @@ func cmdNote(c *invocation) error {
 		a.Body = b
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Note(stdout, a) })
+	return c.store(func(s *store.Store) error { return spine.New(s).Note(stdout, a) })
 }
 
 func cmdSessions(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.SessionsArgs{}
+	a := dm.SessionsArgs{}
 	fs.BoolVar(&a.All, "all", false, "include sessions that have ended")
 	if _, err := c.parse(); err != nil {
 		return err
 	}
 	a.JSON = c.json()
-	return withMessenger(c.cmd, c.env, func(m brain.Messenger) error {
-		return brain.SessionsCommand(stdout, m, brain.SessionID(), a)
+	return withMessenger(c.cmd, c.env, func(m dm.Messenger) error {
+		return dm.SessionsCommand(stdout, m, store.SessionID(), a)
 	})
 }
 
 func cmdDM(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.DMArgs{}
+	a := dm.DMArgs{}
 	fs.BoolVar(&a.Sent, "sent", false, "what this project sent, and whether each was read")
 	fs.IntVar(&a.N, "n", 10, "")
 	fs.BoolVar(&a.AllowSecret, "allow-secret", false, "send it anyway; it is a false positive")
@@ -121,7 +123,7 @@ func cmdDM(c *invocation) error {
 		}
 	}
 	a.JSON = c.json()
-	return withMessenger(c.cmd, c.env, func(m brain.Messenger) error {
-		return brain.SendDMCommand(stdout, m, brain.SessionID(), a)
+	return withMessenger(c.cmd, c.env, func(m dm.Messenger) error {
+		return dm.SendDMCommand(stdout, m, store.SessionID(), a)
 	})
 }

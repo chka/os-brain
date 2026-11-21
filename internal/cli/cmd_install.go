@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/install"
 	"github.com/chka/os-brain/internal/netguard"
+	"github.com/chka/os-brain/internal/pyfmt"
+	"github.com/chka/os-brain/internal/store"
 )
 
 func cmdInit(c *invocation) error {
@@ -16,7 +18,7 @@ func cmdInit(c *invocation) error {
 	fs := c.fs
 	// Creates the brain and wires the hooks. The binary ships alone, with no template
 	// to copy, so it writes everything itself.
-	a := brain.InitArgs{}
+	a := install.InitArgs{}
 	fs.StringVar(&a.Dir, "dir", "brain", "where the brain goes, relative to the project")
 	fs.StringVar(&a.Project, "project", "", "name it calls itself (default: the directory)")
 	fs.BoolVar(&a.NoHook, "no-hook", false, "do not touch .claude/settings.json")
@@ -45,12 +47,12 @@ func cmdInit(c *invocation) error {
 	}
 	// init over a team-edition brain would rewire its hooks to a binary that refuses
 	// every command there, so it refuses first and changes nothing.
-	if cfg, err := brain.LoadConfig(filepath.Join(root, a.Dir, "brain.json")); err == nil {
-		if err := refuseTeamBrain(brain.Env{Config: cfg}); err != nil {
+	if cfg, err := store.LoadConfig(filepath.Join(root, a.Dir, "brain.json")); err == nil {
+		if err := refuseTeamBrain(store.Env{Config: cfg}); err != nil {
 			return err
 		}
 	}
-	return brain.Init(stdout, root, a)
+	return install.Init(stdout, root, a)
 }
 
 func cmdUI(c *invocation) error {
@@ -84,7 +86,7 @@ func cmdUninstall(c *invocation) error {
 	// Removes exactly what init added. A dry run unless --apply, and it never deletes
 	// the database unless --purge: everything else here is one command away from
 	// being recreated, and the database is not.
-	a := brain.UninstallArgs{}
+	a := install.UninstallArgs{}
 	fs.StringVar(&a.Dir, "dir", "brain", "the brain directory, relative to the project")
 	fs.BoolVar(&a.Apply, "apply", false, "actually do it (default: report the plan)")
 	fs.BoolVar(&a.Purge, "purge", false, "delete brain.db too — this is the only copy")
@@ -101,8 +103,8 @@ func cmdUninstall(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error {
-		return brain.Uninstall(stdout, s, root, a)
+	return c.store(func(s *store.Store) error {
+		return install.Uninstall(stdout, s, root, a)
 	})
 }
 
@@ -154,7 +156,7 @@ func cmdMCP(c *invocation) error {
 // other one's only database. Two arguments naming two brains is ambiguous, and ambiguity is
 // refused. With no argument the root is derived from the opened brain, so a shell in a
 // subdirectory uninstalls the brain it found rather than <subdir>/brain.
-func uninstallRoot(env brain.Env, pos []string, dir string) (string, error) {
+func uninstallRoot(env store.Env, pos []string, dir string) (string, error) {
 	if dir == "" {
 		dir = "brain"
 	}
@@ -162,7 +164,7 @@ func uninstallRoot(env brain.Env, pos []string, dir string) (string, error) {
 	if filepath.IsAbs(dir) || clean == "." || clean == ".." ||
 		strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
 		return "", fmt.Errorf("--dir is the brain directory relative to the project, and %s "+
-			"is not one. Nothing was changed.", brain.Repr(dir))
+			"is not one. Nothing was changed.", pyfmt.Repr(dir))
 	}
 	here, err := filepath.EvalSymlinks(env.Here)
 	if err != nil {
@@ -187,7 +189,7 @@ func uninstallRoot(env brain.Env, pos []string, dir string) (string, error) {
 
 // rootOfOpenedBrain walks up from the opened brain directory by as many levels as --dir has,
 // and refuses when --dir does not name that brain from the root it reaches.
-func rootOfOpenedBrain(env brain.Env, dir, clean string) (string, error) {
+func rootOfOpenedBrain(env store.Env, dir, clean string) (string, error) {
 	root := env.Here
 	for range strings.Split(clean, string(filepath.Separator)) {
 		root = filepath.Dir(root)

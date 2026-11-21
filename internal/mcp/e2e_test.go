@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chka/os-brain/internal/brain"
 	"github.com/chka/os-brain/internal/cli"
 	"github.com/chka/os-brain/internal/clitest"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // End to end, against the real dispatch, with the coverage claim derived rather than
@@ -183,7 +183,8 @@ func script(t *testing.T, root string) []step {
 		{argv: []string{"get", "1"}, want: "nginx"},
 		{argv: []string{"get", "1", "--all-projects"}, want: "nginx"},
 		// Both are a person's act at a terminal; what they do (the claim and the
-		// whole-store refusal without a person) is unit-tested in internal/brain.
+		// whole-store refusal without a person) is unit-tested in internal/store and
+		// internal/project.
 		{argv: []string{"relabel", "--claim"}, wantErr: "controlling terminal"},
 		{argv: []string{"backup", "--whole-store"}, wantErr: "controlling terminal"},
 		{argv: []string{"history", "--id", "4", "-n", "5"}, want: ""},
@@ -247,7 +248,7 @@ func script(t *testing.T, root string) []step {
 		{argv: []string{"axiom", "list"}, want: "AXIOMS"},
 		// Axioms and standards are changed by a person at a terminal, which this harness is
 		// not; writing them is covered by internal/cli/spine_person_test.go and the
-		// internal/brain tests and every write path here proves the refusal.
+		// internal/spine tests and every write path here proves the refusal.
 		{argv: []string{"axiom", "add", "e2e: a test axiom, removed in the next step",
 			"--why", "proving the write path"}, wantErr: "controlling terminal"},
 		{argv: []string{"standard", "add", "go", "--category", "stack",
@@ -266,9 +267,9 @@ func script(t *testing.T, root string) []step {
 		// --- version and release -------------------------------------------------------
 		{argv: []string{"version"}, want: "os-brain"},
 		// A release is a person's act at a terminal, which this harness is not; publishing
-		// is covered by internal/cli/release_person_test.go and the internal/brain release
+		// is covered by internal/cli/release_person_test.go and the internal/spine release
 		// tests.
-		{argv: []string{"release", brain.Version, "--notes", "the e2e run"}, wantErr: "controlling terminal"},
+		{argv: []string{"release", store.Version, "--notes", "the e2e run"}, wantErr: "controlling terminal"},
 		{argv: []string{"help"}, want: "remember"},
 
 		{argv: []string{"forget", "999999", "--purge"}, wantErr: "no memory"},
@@ -404,7 +405,7 @@ func script(t *testing.T, root string) []step {
 			"--confidence", "confirmed"}, wantErr: "refusing 'confirmed'"},
 		{argv: []string{"relabel", "e2e", "--apply", "--i-mean-it"},
 			wantErr: "already this project"},
-		{argv: []string{"release", "99" + brain.Version[2:], "--notes", "a version this binary is not"},
+		{argv: []string{"release", "99" + store.Version[2:], "--notes", "a version this binary is not"},
 			wantErr: "controlling terminal"},
 		{argv: []string{"prune", "--superseded", "--older-than", "365", "--apply",
 			"--yes", "--backup", p("prune.json"), "--max-delete", "5", "--force",
@@ -473,10 +474,10 @@ func TestEndToEndAcrossTheWholeSurface(t *testing.T) {
 	// (see notATool), so they need no entry here.
 	elsewhere := map[string]string{
 		"bootstrap": "reads Claude Code transcripts from outside the store",
-		"init":      "writes hooks into agent config files; covered by the internal/brain init tests",
-		"uninstall": "removes an install; covered by internal/cli/target_scope_test.go and internal/brain",
-		"absorb":    "pulls in a second standalone database; covered by internal/brain",
-		"share":     "moves the whole store into another file; covered by internal/brain",
+		"init":      "writes hooks into agent config files; covered by the internal/install init tests",
+		"uninstall": "removes an install; covered by internal/cli/target_scope_test.go and internal/install",
+		"absorb":    "pulls in a second standalone database; covered by internal/project",
+		"share":     "moves the whole store into another file; covered by internal/project",
 	}
 	var missing []string
 	for _, cmd := range commandNames() {
@@ -512,11 +513,11 @@ func TestEveryFlagIsExercisedSomewhere(t *testing.T) {
 	// not listed here and not passed above is a gap the test reports.
 	// As above, the servers (mcp, ui) and the stdin hooks are not in commandNames.
 	exempt := map[string]string{
-		"init":      "writes hooks into agent config files; covered by the internal/brain init tests",
-		"uninstall": "removes an install; covered by internal/cli/target_scope_test.go and internal/brain",
+		"init":      "writes hooks into agent config files; covered by the internal/install init tests",
+		"uninstall": "removes an install; covered by internal/cli/target_scope_test.go and internal/install",
 		"bootstrap": "reads Claude Code transcripts from outside the store",
-		"absorb":    "pulls in a foreign database; covered by internal/brain",
-		"share":     "moves the whole store into another file; covered by internal/brain",
+		"absorb":    "pulls in a foreign database; covered by internal/project",
+		"share":     "moves the whole store into another file; covered by internal/project",
 	}
 
 	// Per-FLAG exemptions, because exempting a whole command to excuse two of its flags
@@ -525,11 +526,11 @@ func TestEveryFlagIsExercisedSomewhere(t *testing.T) {
 	exemptFlag := map[string]string{
 		"remember everywhere": "stores for a whole organisation, which only the team " +
 			"edition has; the refusal on a local brain is TestEverywhereRefusesOnALocalBrain " +
-			"in internal/brain",
+			"in internal/hook",
 		"backup restore": "needs the path of a copy that does not exist until the run " +
-			"makes one; the drill is covered end to end by the internal/brain safety tests",
-		"backup apply": "only meaningful with --restore; covered by the internal/brain " +
-			"safety tests, which empty a store and put it back",
+			"makes one; the drill is covered end to end by the internal/safety tests",
+		"backup apply": "only meaningful with --restore; covered by the internal/safety " +
+			"tests, which empty a store and put it back",
 	}
 
 	var gaps []string

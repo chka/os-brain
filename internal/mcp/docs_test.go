@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/install"
 )
 
 // The agent docs ship inside the binary, so they are part of the release and can be
@@ -14,7 +14,7 @@ import (
 // reading files, which is the failure the brain exists to stop. A command missing from the
 // table is one no agent will ever use.
 func TestHowtoTeachesOnlyCommandsThatExist(t *testing.T) {
-	body, err := brain.AgentDoc("HOWTO.md")
+	body, err := install.AgentDoc("HOWTO.md")
 	if err != nil {
 		t.Fatal(err)
 	}

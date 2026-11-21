@@ -9,7 +9,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/brief"
+	"github.com/chka/os-brain/internal/dm"
+	"github.com/chka/os-brain/internal/hook"
+	"github.com/chka/os-brain/internal/install"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // The hooks are what the agent host runs on its own events, whether or not the model
@@ -20,7 +24,7 @@ import (
 func cmdHookRecall(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.HookRecallArgs{}
+	a := hook.HookRecallArgs{}
 	fs.IntVar(&a.N, "n", 3, "")
 	fs.IntVar(&a.Chars, "chars", 180, "body characters per hit")
 	fs.IntVar(&a.MinChars, "min-chars", 15, "ignore prompts shorter than this")
@@ -61,9 +65,9 @@ func cmdHookRecall(c *invocation) error {
 	}
 	// Direct messages first: a message somebody sent to this running session outranks
 	// anything recall might guess is relevant.
-	deliverTo(stdout, c.env, brain.HookPrompt)
-	return c.store(func(s *brain.Store) error {
-		return s.HookRecall(bytes.NewReader(raw), stdout, a)
+	deliverTo(stdout, c.env, dm.HookPrompt)
+	return c.store(func(s *store.Store) error {
+		return hook.New(s).HookRecall(bytes.NewReader(raw), stdout, a)
 	})
 }
 
@@ -78,7 +82,7 @@ func promptEnvelope(stdout io.Writer, emit string) (io.Writer, func()) {
 			if emit == "codex" {
 				event = "UserPromptSubmit"
 			}
-			_ = brain.EmitEventEnvelope(stdout, emit, event, body)
+			_ = brief.EmitEventEnvelope(stdout, emit, event, body)
 		}
 	}
 }
@@ -86,7 +90,7 @@ func promptEnvelope(stdout io.Writer, emit string) (io.Writer, func()) {
 func cmdHookStop(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.SessionEndArgs{}
+	a := brief.SessionEndArgs{}
 	emit := fs.String("emit", "", "envelope the host agent needs: gemini, codex (default plain text)")
 	if _, err := c.parse(); err != nil {
 		return err
@@ -103,14 +107,14 @@ func cmdHookStop(c *invocation) error {
 		// delivered message or the footprint line, so under --emit the hook records and
 		// prints nothing; the next BeforeAgent delivers what is waiting.
 		out = io.Discard
-	} else if stopDelivers(c, a, raw) && deliverTo(stdout, c.env, brain.HookStop) {
+	} else if stopDelivers(c, a, raw) && deliverTo(stdout, c.env, dm.HookStop) {
 		// A message waiting for this session is the one thing that should stop it stopping.
 		// Delivered, the hook's output is the block and nothing else: Claude Code parses the
 		// whole of stdout as the decision, so the footprint report goes nowhere this turn
 		// and runs again at the next stop.
 		out = io.Discard
 	}
-	return c.store(func(s *brain.Store) error { return s.SessionEnd(out, a) })
+	return c.store(func(s *store.Store) error { return brief.New(s).SessionEnd(out, a) })
 }
 
 // stopDelivers reports whether hook-stop may hand this session its waiting messages. Only
@@ -118,14 +122,14 @@ func cmdHookStop(c *invocation) error {
 // and claiming for it would hand one session another's messages. And never at sessionEnd,
 // where there is no next turn to show a message in, so claiming one would mark it delivered
 // to nobody.
-func stopDelivers(c *invocation, a brain.SessionEndArgs, raw []byte) bool {
+func stopDelivers(c *invocation, a brief.SessionEndArgs, raw []byte) bool {
 	return !a.JSON && c.env.Session == "" && !hookEvent(raw, "sessionEnd")
 }
 
 func cmdWakeup(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.WakeupArgs{}
+	a := brief.WakeupArgs{}
 	fs.StringVar(&a.Name, "name", "", "probe name, for add/rm")
 	fs.StringVar(&a.Run, "run", "", "shell command the probe runs, for add")
 	fs.IntVar(&a.Timeout, "timeout", 0, "seconds a probe may take (default 10, max 60)")
@@ -135,7 +139,7 @@ func cmdWakeup(c *invocation) error {
 	fs.BoolVar(&a.NoProbes, "no-probes", false, "skip this project's declared probes")
 	fs.BoolVar(&a.NoCursor, "no-cursor", false, "do not move the last-brief marker")
 	fs.StringVar(&a.Emit, "emit", "", "envelope the host agent needs: cursor, gemini (default plain text)")
-	fs.IntVar(&a.MaxBytes, "max-bytes", brain.DefaultMaxBytes,
+	fs.IntVar(&a.MaxBytes, "max-bytes", brief.DefaultMaxBytes,
 		"trim from the least important end to fit; 0 for all of it")
 	pos, err := c.parse()
 	if err != nil {
@@ -159,16 +163,16 @@ func cmdWakeup(c *invocation) error {
 		raw := hookStdin()
 		adoptHookSession(raw)
 		if a.Emit == "" && !a.JSON {
-			if brain.CursorDeliversBrief(raw) {
+			if install.CursorDeliversBrief(raw) {
 				return nil
 			}
 			var flush func()
 			stdout, flush = hostEnvelope(stdout, raw, "SessionStart")
 			defer flush()
-			deliverTo(stdout, c.env, brain.HookPrompt)
+			deliverTo(stdout, c.env, dm.HookPrompt)
 		}
 	}
-	return c.store(func(s *brain.Store) error { return s.Wakeup(stdout, a) })
+	return c.store(func(s *store.Store) error { return brief.New(s).Wakeup(stdout, a) })
 }
 
 // gateProbeChange guards the wakeup subcommands that decide what runs on this machine. The
@@ -176,7 +180,7 @@ func cmdWakeup(c *invocation) error {
 // approving them. An MCP caller is not that person, nor is an agent's shell: the transport
 // is checked, a terminal is required, and the person types the answer into it after seeing
 // exactly what they approve.
-func gateProbeChange(c *invocation, a *brain.WakeupArgs) error {
+func gateProbeChange(c *invocation, a *brief.WakeupArgs) error {
 	switch a.Sub {
 	case "trust":
 		if c.via.transport != viaCLI.transport {
@@ -207,8 +211,8 @@ func cmdHookTool(c *invocation) error {
 	// session id is needed, but leaving the rest unread can block the host writing it.
 	adoptHookSession(hookStdin())
 	_, _ = io.Copy(io.Discard, os.Stdin)
-	if brain.ToolPollDue(filepath.Dir(c.env.GlobalDB)) {
-		deliverTo(c.stdout, c.env, brain.HookTool)
+	if dm.ToolPollDue(filepath.Dir(c.env.GlobalDB)) {
+		deliverTo(c.stdout, c.env, dm.HookTool)
 	}
 	return nil
 }
@@ -219,8 +223,8 @@ func cmdHookEnd(c *invocation) error {
 	}
 	adoptHookSession(hookStdin())
 	_, _ = io.Copy(io.Discard, os.Stdin)
-	brain.ClearToolPoll(filepath.Dir(c.env.GlobalDB))
-	_ = withMessenger(c.cmd, c.env, func(m brain.Messenger) error { return m.EndSession() })
+	dm.ClearToolPoll(filepath.Dir(c.env.GlobalDB))
+	_ = withMessenger(c.cmd, c.env, func(m dm.Messenger) error { return m.EndSession() })
 	return nil
 }
 

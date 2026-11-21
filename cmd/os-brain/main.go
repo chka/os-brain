@@ -10,17 +10,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/chka/os-brain/internal/brain"
 	"github.com/chka/os-brain/internal/channel"
 	"github.com/chka/os-brain/internal/cli"
 	"github.com/chka/os-brain/internal/mcp"
+	"github.com/chka/os-brain/internal/textguard"
 	"github.com/chka/os-brain/internal/webui"
 )
 
 func main() {
 	cli.RegisterServers(cli.Servers{MCP: mcp.Serve, UI: webui.Serve, Channel: channel.Serve})
 	if err := cli.Run(os.Args[1:], os.Stdout); err != nil {
-		fmt.Fprintln(brain.SafeOutput(os.Stderr), err)
+		fmt.Fprintln(textguard.SafeOutput(os.Stderr), err)
 		os.Exit(1)
 	}
 }

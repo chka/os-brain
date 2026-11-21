@@ -1,0 +1,11 @@
+package tasks
+
+import "github.com/chka/os-brain/internal/store"
+
+// Store is a brain opened for the task commands. It adds them to the store underneath and
+// nothing else, so a task is read and written through the same connection, env and config
+// as the command that opened the brain.
+type Store struct{ *store.Store }
+
+// New gives the task commands of an open brain.
+func New(s *store.Store) *Store { return &Store{s} }

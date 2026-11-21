@@ -24,9 +24,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/chka/os-brain/internal/brain"
 	"github.com/chka/os-brain/internal/cli"
 	"github.com/chka/os-brain/internal/netguard"
+	"github.com/chka/os-brain/internal/store"
 )
 
 type httpOpts struct {
@@ -444,7 +444,7 @@ func mintHTTPToken(o *httpOpts) (string, error) {
 	if err != nil || port == "" {
 		port = "default"
 	}
-	dir := brain.ConfigDir()
+	dir := store.ConfigDir()
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}

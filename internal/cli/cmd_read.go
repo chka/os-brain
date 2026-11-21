@@ -1,15 +1,20 @@
 package cli
 
 import (
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/bootstrap"
+	"github.com/chka/os-brain/internal/brief"
+	"github.com/chka/os-brain/internal/curate"
+	"github.com/chka/os-brain/internal/memory"
+	"github.com/chka/os-brain/internal/overview"
+	"github.com/chka/os-brain/internal/store"
 )
 
 func cmdBrief(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.BriefArgs{}
-	fs.IntVar(&a.MaxPinned, "max-pinned", brain.BriefMaxPinned, "")
-	fs.IntVar(&a.MaxPrefs, "max-prefs", brain.BriefMaxPrefs, "")
+	a := brief.BriefArgs{}
+	fs.IntVar(&a.MaxPinned, "max-pinned", brief.BriefMaxPinned, "")
+	fs.IntVar(&a.MaxPrefs, "max-prefs", brief.BriefMaxPrefs, "")
 	fs.IntVar(&a.NewFor, "new-for", 1, "days of 'new since' to always show")
 	fs.IntVar(&a.NewProjectBelow, "new-project-below", 15,
 		"show house standards in full below this many memories")
@@ -24,7 +29,7 @@ func cmdBrief(c *invocation) error {
 	a.MaxBytesSet = flagSet(fs, "max-bytes")
 	a.NewForSet = flagSet(fs, "new-for")
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Brief(stdout, a) })
+	return c.store(func(s *store.Store) error { return brief.New(s).Brief(stdout, a) })
 }
 
 func cmdOpen(c *invocation) error {
@@ -33,7 +38,7 @@ func cmdOpen(c *invocation) error {
 	// Three names for one command, and the aliases are not indulgence: the failure
 	// this answers is a session reaching for grep because it did not think the brain
 	// had an answer, and a session that guesses the wrong verb learns exactly that.
-	a := brain.OpenArgs{}
+	a := brief.OpenArgs{}
 	fs.IntVar(&a.N, "n", 6, "how many in-flight memories and events")
 	fs.BoolVar(&a.Full, "full", false, "task bodies too, and longer memory extracts")
 	fs.BoolVar(&a.Compact, "compact", false, "the hook's form: shortest extracts")
@@ -41,7 +46,7 @@ func cmdOpen(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Open(stdout, a) })
+	return c.store(func(s *store.Store) error { return brief.New(s).Open(stdout, a) })
 }
 
 func cmdMap(c *invocation) error {
@@ -51,8 +56,8 @@ func cmdMap(c *invocation) error {
 	if _, err := c.parse(); err != nil {
 		return err
 	}
-	return c.store(func(s *brain.Store) error {
-		return s.Map(stdout, brain.MapArgs{Top: *mapTop, JSON: c.json()})
+	return c.store(func(s *store.Store) error {
+		return overview.New(s).Map(stdout, overview.MapArgs{Top: *mapTop, JSON: c.json()})
 	})
 }
 
@@ -62,13 +67,13 @@ func cmdStats(c *invocation) error {
 	if err != nil {
 		return err
 	}
-	return c.store(func(s *brain.Store) error { return s.Stats(stdout, c.json()) })
+	return c.store(func(s *store.Store) error { return memory.New(s).Stats(stdout, c.json()) })
 }
 
 func cmdReview(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.ReviewArgs{}
+	a := curate.ReviewArgs{}
 	fs.IntVar(&a.N, "n", 8, "")
 	fs.IntVar(&a.StaleDays, "stale-days", 180, "tier A/B unverified for this long is flagged")
 	fs.BoolVar(&a.Duplicates, "duplicates", false, "run the pairwise scan anyway")
@@ -77,13 +82,13 @@ func cmdReview(c *invocation) error {
 		return err
 	}
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Review(stdout, a) })
+	return c.store(func(s *store.Store) error { return curate.New(s).Review(stdout, a) })
 }
 
 func cmdBootstrap(c *invocation) error {
 	stdout := c.stdout
 	fs := c.fs
-	a := brain.BootstrapArgs{}
+	a := bootstrap.BootstrapArgs{}
 	fs.BoolVar(&a.Done, "done", false, "record that the pass is finished")
 	fs.BoolVar(&a.Again, "again", false, "go through the transcripts once more")
 	fs.BoolVar(&a.IncludeMoved, "include-moved", false,
@@ -96,7 +101,7 @@ func cmdBootstrap(c *invocation) error {
 	}
 	a.Read = bootRead
 	a.JSON = c.json()
-	return c.store(func(s *brain.Store) error { return s.Bootstrap(stdout, a) })
+	return c.store(func(s *store.Store) error { return bootstrap.New(s).Bootstrap(stdout, a) })
 }
 
 func cmdEnv(c *invocation) error {
@@ -105,5 +110,5 @@ func cmdEnv(c *invocation) error {
 	if err != nil {
 		return err
 	}
-	return c.store(func(s *brain.Store) error { return s.EnvBlock(stdout, c.json()) })
+	return c.store(func(s *store.Store) error { return brief.New(s).EnvBlock(stdout, c.json()) })
 }

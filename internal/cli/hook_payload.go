@@ -9,7 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/brief"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // hookStdin is the payload a host hands its hook, read only when one can be there: never
@@ -41,7 +42,7 @@ func hookStdin() []byte {
 // without this every Cursor hook was its own session, keyed by its own pid, and no session
 // was ever seen to end.
 func adoptHookSession(payload []byte) {
-	if brain.SessionFromEnv() {
+	if store.SessionFromEnv() {
 		return
 	}
 	var p struct {
@@ -107,7 +108,7 @@ func hostEnvelope(stdout io.Writer, payload []byte, event string) (io.Writer, fu
 
 func devinEnvelope(w io.Writer, event, body string) {
 	if body = strings.TrimSpace(body); body != "" {
-		_ = brain.EmitEventEnvelope(w, "codex", event, body)
+		_ = brief.EmitEventEnvelope(w, "codex", event, body)
 	}
 }
 

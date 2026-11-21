@@ -27,9 +27,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/dm"
 	"github.com/chka/os-brain/internal/mcp"
+	"github.com/chka/os-brain/internal/store"
 	"github.com/chka/os-brain/internal/termtext"
+	"github.com/chka/os-brain/internal/textguard"
+	"github.com/chka/os-brain/internal/timefmt"
 )
 
 const channelInstructions = "Direct messages to this session arrive as <channel> events " +
@@ -41,7 +44,7 @@ const channelInstructions = "Direct messages to this session arrive as <channel>
 // Serve is the channel command: it answers the MCP handshake on in and out and, once the
 // client says it is ready, pushes each direct message for env's session as it arrives,
 // until in closes.
-func Serve(env brain.Env, in io.Reader, out io.Writer) error {
+func Serve(env store.Env, in io.Reader, out io.Writer) error {
 	m, closeFn, err := channelMessenger(env)
 	if err != nil {
 		return err
@@ -105,7 +108,7 @@ func channelReply(req *mcp.RPCRequest) *mcp.RPCResponse {
 				"experimental": map[string]any{"claude/channel": map[string]any{}},
 				"tools":        map[string]any{},
 			},
-			"serverInfo":   map[string]any{"name": "os-brain-channel", "version": brain.Version},
+			"serverInfo":   map[string]any{"name": "os-brain-channel", "version": store.Version},
 			"instructions": channelInstructions,
 		}
 	case "notifications/cancelled":
@@ -125,27 +128,27 @@ func channelReply(req *mcp.RPCRequest) *mcp.RPCResponse {
 
 // channelMessenger opens the store ONCE for the life of the listener. Polling every few
 // seconds through withMessenger would reopen and re-migrate the store each time.
-func channelMessenger(env brain.Env) (brain.Messenger, func(), error) {
-	if !brain.ClaudeSession(brain.SessionID()) {
+func channelMessenger(env store.Env) (dm.Messenger, func(), error) {
+	if !dm.ClaudeSession(store.SessionID()) {
 		return nil, nil, fmt.Errorf("the channel serves one Claude Code session, and this " +
 			"process is not running under one (no CLAUDE_CODE_SESSION_ID). Claude Code starts " +
 			"it itself from .mcp.json; it is not something to run by hand")
 	}
-	s, err := brain.Open(env)
+	s, err := store.Open(env)
 	if err != nil {
 		return nil, nil, err
 	}
-	return s, func() { s.Close() }, nil
+	return dm.New(s), func() { s.Close() }, nil
 }
 
 // channelLoop polls for messages and pushes each as its own event. A failed poll is retried
 // on the next tick and never ends the listener: a store that is busy for a minute must not
 // leave the session deaf until it is restarted.
-func channelLoop(m brain.Messenger, send func(interface{}) error, stop <-chan struct{}) {
-	tick := time.NewTicker(brain.ChannelPoll)
+func channelLoop(m dm.Messenger, send func(interface{}) error, stop <-chan struct{}) {
+	tick := time.NewTicker(dm.ChannelPoll)
 	defer tick.Stop()
 	for {
-		ms, err := m.ClaimDMs("channel", brain.ThisBeat(true))
+		ms, err := m.ClaimDMs("channel", dm.ThisBeat(true))
 		if err == nil {
 			for _, d := range ms {
 				if send(channelEvent(d)) != nil {
@@ -166,19 +169,19 @@ func channelLoop(m brain.Messenger, send func(interface{}) error, stop <-chan st
 // channelEvent is one message as Claude Code's channel notification. The meta keys become
 // attributes on the <channel> tag the model reads, so they are plain lowercase words: the
 // documented behaviour is that anything else in a key is dropped silently.
-func channelEvent(d brain.DM) map[string]any {
+func channelEvent(d dm.DM) map[string]any {
 	// Tag attributes are sender-chosen text the model reads as the tag's own: one line,
 	// control characters made visible, and the same length cap peer labels get everywhere
 	// else, so a sender cannot forge the tag or bury instructions in it.
-	meta := map[string]string{"id": strconv.FormatInt(d.ID, 10), "project": termtext.Label(brain.OneLine(d.FromProject))}
-	if brain.ClaudeSession(d.FromSession) {
-		meta["sender"] = termtext.Label(brain.OneLine(d.FromSession))
+	meta := map[string]string{"id": strconv.FormatInt(d.ID, 10), "project": termtext.Label(textguard.OneLine(d.FromProject))}
+	if dm.ClaudeSession(d.FromSession) {
+		meta["sender"] = termtext.Label(textguard.OneLine(d.FromSession))
 	}
 	return map[string]any{
 		"jsonrpc": "2.0",
 		"method":  "notifications/claude/channel",
 		"params": map[string]any{
-			"content": brain.RenderDMs([]brain.DM{d}, brain.Now()),
+			"content": dm.RenderDMs([]dm.DM{d}, timefmt.Now()),
 			"meta":    meta,
 		},
 	}

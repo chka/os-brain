@@ -19,8 +19,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/chka/os-brain/internal/brain"
 	"github.com/chka/os-brain/internal/cli"
+	"github.com/chka/os-brain/internal/store"
 )
 
 // ProtocolVersion is what this server implements. A client asking for something else gets
@@ -114,7 +114,7 @@ func newServer() (*mcpServer, error) {
 	}
 	s := &mcpServer{tools: tools}
 	var shared bool
-	var env brain.Env
+	var env store.Env
 	s.defaultProject, s.known, shared, env = surveyStore()
 	// OS_BRAIN_PROJECT names the project outright, which is how a stdio server launched by a
 	// client for one repo is configured. That is not ambiguous, shared store or not.
@@ -135,9 +135,9 @@ func newServer() (*mcpServer, error) {
 // is how a session on a shared store discovers what it may name; the env lets initialize
 // say WHERE this brain is, because a connector's label is whatever the person who added it
 // typed, and a session holding two of them cannot otherwise tell one brain from another.
-func surveyStore() (string, []string, bool, brain.Env) {
-	env := brain.NewEnv(serverHome())
-	st, err := brain.Open(env)
+func surveyStore() (string, []string, bool, store.Env) {
+	env := store.NewEnv(serverHome())
+	st, err := store.Open(env)
 	if err != nil {
 		return env.Project, []string{env.Project}, env.Shared, env
 	}
@@ -155,7 +155,7 @@ func serverHome() string {
 	if err != nil {
 		return ""
 	}
-	if found, ok := brain.DiscoverHome(cwd); ok {
+	if found, ok := store.DiscoverHome(cwd); ok {
 		return found
 	}
 	return cwd
@@ -164,7 +164,7 @@ func serverHome() string {
 // visibleProjects lists the projects in st that may be named to a caller, sorted, always
 // including this server's own. A private project is not offered by name, in the initialize
 // text or in the refusal that lists who is here; naming it is refused anyway.
-func visibleProjects(st *brain.Store, own string) []string {
+func visibleProjects(st *store.Store, own string) []string {
 	seen := map[string]bool{own: true}
 	rows, err := st.DB.Query("SELECT DISTINCT project FROM memories WHERE project != ''")
 	if err == nil {
@@ -265,7 +265,7 @@ func (s *mcpServer) initialize(params json.RawMessage) map[string]any {
 			// The title is what a client puts in its UI beside the connector's own label,
 			// and that label is whatever the person who added it typed. Naming the project
 			// here is what lets a session tell two connected brains apart.
-			"name": "os-brain", "title": s.title(), "version": brain.Version,
+			"name": "os-brain", "title": s.title(), "version": store.Version,
 		},
 		"instructions": instructions + s.where,
 	}
@@ -424,14 +424,14 @@ func (s *mcpServer) title() string {
 // whereThisBrainIs is the paragraph appended to the MCP instructions. Over stdio or HTTP a
 // session never sees a brief header until it calls one, so the store and the machine are
 // stated at initialize, where every client reads them exactly once.
-func whereThisBrainIs(env brain.Env, multi bool, known []string) string {
+func whereThisBrainIs(env store.Env, multi bool, known []string) string {
 	var b strings.Builder
 	b.WriteString("\n\nWHERE THIS BRAIN IS\n")
 	fmt.Fprintf(&b, "A LOCAL FILE brain: %s, on this machine only, shared with "+
 		"nobody.\n", env.DBPath)
 	if !multi {
 		fmt.Fprintf(&b, "Reached from %s by os-brain %s, for project %q.\n",
-			brain.MachineName(), brain.Version, env.Project)
+			store.MachineName(), store.Version, env.Project)
 	} else {
 		// Naming only the project the server started in read, to every session in another
 		// project, as "this connector belongs to someone else", and sessions went looking
@@ -440,7 +440,7 @@ func whereThisBrainIs(env brain.Env, multi bool, known []string) string {
 			"this store, not only %q, the project it was started in: each call names its "+
 			"project with _project (or an %s header) and is answered from that project's "+
 			"own memories. A call that names none is refused.\n",
-			brain.MachineName(), brain.Version, env.Project, ProjectHeader)
+			store.MachineName(), store.Version, env.Project, ProjectHeader)
 		b.WriteString(projectsAlreadyHere(known))
 	}
 	b.WriteString("Call env for the live version of all of this.")

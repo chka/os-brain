@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/chka/os-brain/internal/brain"
+	"github.com/chka/os-brain/internal/install"
 )
 
 // `init` without --agent asks the person which agent to wire. The menu takes a number, a
@@ -14,7 +14,7 @@ import (
 // again; and the last number means "I will do it myself", which wires no host.
 func TestAskAgentAnswers(t *testing.T) {
 	root := t.TempDir()
-	self := strconv.Itoa(len(brain.Hosts()) + 1)
+	self := strconv.Itoa(len(install.Hosts()) + 1)
 	cases := []struct {
 		in     string
 		key    string
